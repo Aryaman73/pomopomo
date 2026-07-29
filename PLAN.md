@@ -73,21 +73,21 @@ Light mode is explicitly out of scope for now (per request).
 
 ---
 
-## MVP (v1) — what ships first
+## MVP (v1) — shipped
 
-- [ ] **Pomodoro timer**
+- [x] **Pomodoro timer**
   - 25 / 5 / 15 defaults for session, short break, long break — all configurable
   - Start, pause, reset, skip phase
   - Cycles work → short break → work → … → long break every 4th session
-  - Manual start between phases (auto-start is a v2 setting)
-- [ ] **Count-up timer**
+  - Manual start between phases (auto-start is a v4 setting)
+- [x] **Count-up timer**
   - Open-ended stopwatch for work of unknown length
   - Start, pause, reset
-- [ ] **Alerts on phase end**
+- [x] **Alerts on phase end**
   - Synthesized chime via Web Audio (no asset files, no autoplay problems)
   - Browser notification, behind a one-time permission prompt
   - Live countdown in the tab title
-- [ ] **Markdown planner**
+- [x] **Markdown planner**
   - Live-preview editing (see above)
   - Any heading structure the user wants — `#`, `##`, `###`
   - Todos written as `[] task`, `[x] done`; checkbox is clickable and writes
@@ -101,7 +101,14 @@ Light mode is explicitly out of scope for now (per request).
   or worse, and tick-accumulating timers silently lose minutes. Reloading or
   backgrounding the tab must not change when the timer ends.
 - Timer state is persisted, so a refresh mid-session resumes where you were.
-- `localStorage` writes from the editor are debounced.
+- Both timers tick regardless of which one is on screen. Gating the pomodoro's
+  interval on the visible mode meant switching to the count-up left a session
+  flagged as running but silently no longer alerting — caught in testing.
+- A count-up restores as still-running only if the gap since the last save is
+  under 5 minutes (a reload). A longer gap restores it paused at the time it
+  had, rather than billing you for the hours your laptop was shut.
+- `localStorage` writes from the editor are debounced, and flushed on unload so
+  the last few keystrokes aren't lost.
 
 ---
 
@@ -153,5 +160,9 @@ Light mode is explicitly out of scope for now (per request).
 
 ## Status
 
-Currently building v1. Progress is tracked in the session task list; this file
-is the durable record of scope.
+**v1 is live at https://aryamans.me/pomopomo/** (2026-07-29). Repo:
+`Aryaman73/pomopomo`, Pages source set to GitHub Actions, custom domain
+inherited from `aryaman73.github.io`.
+
+Next up is the v2 block — clean planner and the archive — which is the largest
+piece of the original request still outstanding.
