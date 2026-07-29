@@ -4,6 +4,16 @@
   gap: 18px;
 }
 
+.task-input {
+  width: 100%;
+  font-size: 14px;
+  padding: 9px 12px;
+}
+
+.task-input::placeholder {
+  color: var(--text-faint);
+}
+
 /* ── Dial ────────────────────────────────────────────────────────────────── */
 
 .dial {

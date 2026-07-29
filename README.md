@@ -18,6 +18,17 @@ your planner lives in `localStorage` and nowhere else.
   a reload — the countdown is anchored to an absolute deadline, not to ticks, so
   a throttled background tab can't make it drift
 
+**Session record**
+- Every completed focus session and every logged count-up goes in the record.
+  Breaks never do.
+- Optional task name on either timer, so the record says what you were doing
+- History under the timer, grouped by day with daily totals; individual sessions
+  can be deleted
+- Stats view: today / this week / all time, plus per-day and per-week bars
+- Skipping out of a focus phase logs the time you actually did (flagged
+  *partial*); Reset discards it. A pomodoro that finishes while the tab is
+  closed is still recorded on next load.
+
 **Planner**
 - Live-preview markdown: `# headings` render as headings, `[] task` renders as a
   real checkbox you can click, and the raw markdown reappears on whichever line

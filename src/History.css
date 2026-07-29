@@ -1,0 +1,278 @@
+.history-panel .panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.history-confirm {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.history-danger {
+  color: var(--magenta) !important;
+}
+
+.history-empty {
+  margin: 0;
+  padding: 18px 4px 10px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-faint);
+}
+
+.history-empty strong {
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+/* One shared scroll container for both tabs, so switching between them doesn't
+   change the panel's height. */
+.history-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+
+.history-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.history-scroll::-webkit-scrollbar-thumb {
+  background: rgba(126, 90, 214, 0.4);
+  border-radius: 8px;
+}
+
+/* ── Session list ────────────────────────────────────────────────────────── */
+
+.session-group + .session-group {
+  margin-top: 14px;
+}
+
+.session-group-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 2px 5px;
+  background: var(--panel-solid);
+  border-bottom: 1px solid var(--line);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.session-group-head span:last-child {
+  color: var(--cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+.session-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.session {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto auto 20px;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 2px;
+  border-bottom: 1px solid rgba(126, 90, 214, 0.14);
+  font-size: 13px;
+}
+
+.session:last-child {
+  border-bottom: 0;
+}
+
+.session-kind {
+  font-size: 13px;
+  line-height: 1;
+  text-align: center;
+  color: var(--magenta);
+}
+
+.session-kind-countup {
+  color: var(--violet);
+}
+
+.session-task {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-task em {
+  color: var(--text-faint);
+  font-style: normal;
+}
+
+.session-partial {
+  flex: none;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--amber);
+  border: 1px solid rgba(255, 203, 94, 0.35);
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+
+.session-time {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.session-duration {
+  font-weight: 600;
+  color: var(--cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+.session-remove {
+  border: 0;
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 17px;
+  line-height: 1;
+  padding: 0;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s;
+}
+
+.session:hover .session-remove,
+.session-remove:focus-visible {
+  opacity: 1;
+}
+
+.session-remove:hover {
+  color: var(--magenta);
+}
+
+/* Touch devices have no hover, so the control would otherwise be unreachable. */
+@media (hover: none) {
+  .session-remove {
+    opacity: 1;
+  }
+}
+
+/* ── Stats ───────────────────────────────────────────────────────────────── */
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.stat-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 10px 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.28);
+  text-align: center;
+}
+
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.stat-sub {
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+.stats-range button {
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+}
+
+.bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) 52px;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+}
+
+.bar-label {
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bar-track {
+  height: 9px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, var(--violet), var(--cyan));
+  transition: width 0.25s ease;
+}
+
+.bar-value {
+  text-align: right;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.bar-row-empty .bar-label,
+.bar-row-empty .bar-value {
+  color: var(--text-faint);
+}
+
+.stats-note {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-faint);
+}

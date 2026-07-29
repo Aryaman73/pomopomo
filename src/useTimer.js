@@ -6,6 +6,13 @@ import {
   requestNotificationPermission,
   unlockAudio,
 } from "./alerts";
+import {
+  addSession,
+  loadSessions,
+  makeSession,
+  MIN_PARTIAL_MS,
+  saveSessions,
+} from "./sessions";
 
 const MIN = 60_000;
 
@@ -54,6 +61,7 @@ function advance(p, settings) {
       deadline: null,
       remaining: phaseDuration(settings, phase),
       started: false,
+      startedAt: null,
     };
   }
   return {
@@ -63,10 +71,23 @@ function advance(p, settings) {
     deadline: null,
     remaining: phaseDuration(settings, "work"),
     started: false,
+    startedAt: null,
   };
 }
 
-function initialPomo(settings) {
+function loadTasks() {
+  const raw = load("tasks", null);
+  return {
+    pomodoro: typeof raw?.pomodoro === "string" ? raw.pomodoro : "",
+    countup: typeof raw?.countup === "string" ? raw.countup : "",
+  };
+}
+
+// Returns the restored timer *and* any session that completed while the tab was
+// closed. The recovery case matters more than it looks: a pomodoro finishing
+// unattended is the normal case for anyone who starts one and walks away, and
+// without this every such session would vanish from the record.
+function restorePomo(settings) {
   const fresh = {
     phase: "work",
     round: 0,
@@ -74,9 +95,12 @@ function initialPomo(settings) {
     deadline: null,
     remaining: phaseDuration(settings, "work"),
     started: false,
+    startedAt: null,
   };
   const saved = load("pomo", null);
-  if (!saved || typeof saved.remaining !== "number") return fresh;
+  if (!saved || typeof saved.remaining !== "number") {
+    return { pomo: fresh, recovered: null };
+  }
 
   const restored = { ...fresh, ...saved };
 
@@ -84,10 +108,26 @@ function initialPomo(settings) {
   // was closed. If it already elapsed, come back on the *next* phase rather
   // than chiming for something that finished an hour ago.
   if (restored.running && restored.deadline) {
-    if (Date.now() >= restored.deadline) return advance(restored, settings);
-    return { ...restored, remaining: restored.deadline - Date.now() };
+    if (Date.now() >= restored.deadline) {
+      const ms = phaseDuration(settings, "work");
+      const recovered =
+        restored.phase === "work"
+          ? makeSession({
+              kind: "pomodoro",
+              task: loadTasks().pomodoro,
+              start: restored.startedAt || restored.deadline - ms,
+              end: restored.deadline,
+              ms,
+            })
+          : null;
+      return { pomo: advance(restored, settings), recovered };
+    }
+    return {
+      pomo: { ...restored, remaining: restored.deadline - Date.now() },
+      recovered: null,
+    };
   }
-  return { ...restored, running: false, deadline: null };
+  return { pomo: { ...restored, running: false, deadline: null }, recovered: null };
 }
 
 // How long a gap still counts as "the page reloaded" rather than "I walked
@@ -120,15 +160,34 @@ export function useTimer() {
   const [mode, setMode] = useState(() =>
     load("mode", "pomodoro") === "countup" ? "countup" : "pomodoro"
   );
-  const [pomo, setPomo] = useState(() => initialPomo(sanitizeSettings(load("settings", null))));
+  const [boot] = useState(() => restorePomo(sanitizeSettings(load("settings", null))));
+  const [pomo, setPomo] = useState(boot.pomo);
   const [countup, setCountup] = useState(initialCountup);
+  const [tasks, setTasks] = useState(loadTasks);
+  const [sessions, setSessions] = useState(() => {
+    const list = loadSessions();
+    return boot.recovered ? addSession(list, boot.recovered) : list;
+  });
 
   // Refs mirror state so the interval callback always sees current values
   // without needing to be torn down and rebuilt on every tick.
   const pomoRef = useRef(pomo);
   pomoRef.current = pomo;
+  const countupRef = useRef(countup);
+  countupRef.current = countup;
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
+  const tasksRef = useRef(tasks);
+  tasksRef.current = tasks;
+
+  const logSession = useCallback((session) => {
+    setSessions((list) => addSession(list, session));
+  }, []);
+
+  // `step` runs from both the interval and the visibilitychange handler, and
+  // `pomoRef` only refreshes on render — so without this, a catch-up call can
+  // land on the same expired deadline and advance (and log) the phase twice.
+  const handledDeadline = useRef(null);
 
   // ── Ticking ─────────────────────────────────────────────────────────────
   // Display time is always derived from an absolute deadline, never from
@@ -150,7 +209,27 @@ export function useTimer() {
         setPomo({ ...p, remaining: left });
         return;
       }
+      if (handledDeadline.current === p.deadline) return;
+      handledDeadline.current = p.deadline;
+
       const ended = p.phase;
+
+      // Only focus phases go in the record, and the session is stamped with the
+      // scheduled deadline rather than `Date.now()` — a throttled tab can fire
+      // this seconds late, and the session didn't run those extra seconds.
+      if (ended === "work") {
+        const ms = phaseDuration(settingsRef.current, "work");
+        logSession(
+          makeSession({
+            kind: "pomodoro",
+            task: tasksRef.current.pomodoro,
+            start: p.startedAt || p.deadline - ms,
+            end: p.deadline,
+            ms,
+          })
+        );
+      }
+
       const next = advance(p, settingsRef.current);
       setPomo(next);
       playChime(ended === "work" ? "work" : "break");
@@ -202,6 +281,9 @@ export function useTimer() {
     save("countup", countup);
   }, [countup]);
 
+  useEffect(() => saveSessions(sessions), [sessions]);
+  useEffect(() => save("tasks", tasks), [tasks]);
+
   // ── Actions ─────────────────────────────────────────────────────────────
   const start = useCallback(() => {
     // Both of these need a user gesture, and this is the only one guaranteed to
@@ -216,7 +298,16 @@ export function useTimer() {
     setPomo((p) => {
       if (p.running) return p;
       const remaining = p.remaining > 0 ? p.remaining : phaseDuration(settings, p.phase);
-      return { ...p, running: true, started: true, remaining, deadline: Date.now() + remaining };
+      return {
+        ...p,
+        running: true,
+        started: true,
+        // Set once per phase, so resuming from a pause doesn't restamp when the
+        // session began.
+        startedAt: p.startedAt || Date.now(),
+        remaining,
+        deadline: Date.now() + remaining,
+      };
     });
   }, [mode, settings]);
 
@@ -247,6 +338,8 @@ export function useTimer() {
     else start();
   }, [mode, countup.running, pomo.running, pause, start]);
 
+  // Reset is the escape hatch: it discards the current stretch rather than
+  // logging it. If you want partial credit, use Skip.
   const reset = useCallback(() => {
     if (mode === "countup") {
       setCountup({ running: false, base: 0, startedAt: null });
@@ -257,15 +350,60 @@ export function useTimer() {
       running: false,
       deadline: null,
       started: false,
+      startedAt: null,
       remaining: phaseDuration(settingsRef.current, p.phase),
     }));
   }, [mode]);
 
   // Jump to the next phase without chiming — this was the user's choice, they
-  // don't need to be told about it.
+  // don't need to be told about it. Bailing out of a focus phase still logs the
+  // work actually done, so long as it was more than a mis-click's worth.
+  // Reading through the ref rather than a functional updater keeps the logging
+  // out of a state updater, which React is free to run twice.
   const skip = useCallback(() => {
-    setPomo((p) => advance(p, settingsRef.current));
-  }, []);
+    const p = pomoRef.current;
+    if (p.phase === "work" && p.started) {
+      const total = phaseDuration(settingsRef.current, "work");
+      const left = p.running ? Math.max(0, p.deadline - Date.now()) : p.remaining;
+      const done = total - left;
+      if (done >= MIN_PARTIAL_MS) {
+        const end = Date.now();
+        logSession(
+          makeSession({
+            kind: "pomodoro",
+            task: tasksRef.current.pomodoro,
+            start: p.startedAt || end - done,
+            end,
+            ms: done,
+            partial: true,
+          })
+        );
+      }
+    }
+    setPomo(advance(p, settingsRef.current));
+  }, [logSession]);
+
+  // A count-up has no natural end, so logging it is an explicit act. Reset
+  // stays a discard — without both, there'd be no way to say "that one didn't
+  // count".
+  const logCountup = useCallback(() => {
+    const c = countupRef.current;
+    const ms = c.running ? c.base + (Date.now() - c.startedAt) : c.base;
+    if (ms < 1000) return;
+    const end = Date.now();
+    logSession(
+      makeSession({
+        kind: "countup",
+        task: tasksRef.current.countup,
+        // Approximate: pauses aren't subtracted from the span, but `ms` — the
+        // number that actually counts — only ever includes running time.
+        start: end - ms,
+        end,
+        ms,
+      })
+    );
+    setCountup({ running: false, base: 0, startedAt: null });
+  }, [logSession]);
 
   const resetCycle = useCallback(() => {
     setPomo({
@@ -275,8 +413,21 @@ export function useTimer() {
       deadline: null,
       remaining: phaseDuration(settingsRef.current, "work"),
       started: false,
+      startedAt: null,
     });
   }, []);
+
+  const setTask = useCallback(
+    (value) => setTasks((t) => ({ ...t, [mode]: value })),
+    [mode]
+  );
+
+  const removeSession = useCallback(
+    (id) => setSessions((list) => list.filter((s) => s.id !== id)),
+    []
+  );
+
+  const clearSessions = useCallback(() => setSessions([]), []);
 
   const updateSettings = useCallback((patch) => {
     setSettings((prev) => {
@@ -318,11 +469,19 @@ export function useTimer() {
     elapsed: countupElapsed,
     progress: total > 0 ? 1 - pomoRemaining / total : 0,
 
+    task: tasks[mode],
+    setTask,
+
+    sessions,
+    removeSession,
+    clearSessions,
+
     start,
     pause,
     toggle,
     reset,
     skip,
+    logCountup,
     resetCycle,
   };
 }

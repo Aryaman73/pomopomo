@@ -1,3 +1,4 @@
+import History from "./History";
 import Planner from "./Planner";
 import Timer from "./Timer";
 import { useTimer } from "./useTimer";
@@ -15,7 +16,14 @@ export default function App() {
         </header>
 
         <main className="layout">
-          <Timer {...timer} />
+          <div className="column">
+            <Timer {...timer} />
+            <History
+              sessions={timer.sessions}
+              removeSession={timer.removeSession}
+              clearSessions={timer.clearSessions}
+            />
+          </div>
           <Planner />
         </main>
 

@@ -112,9 +112,42 @@ Light mode is explicitly out of scope for now (per request).
 
 ---
 
+## v2 — session record and stats (shipped)
+
+- [x] **Every stretch of work is logged** — completed focus phases and count-up
+      sessions. Breaks are never recorded.
+- [x] **Optional task name** on both timers, kept separately per mode since the
+      two timers run independently
+- [x] **History list** under the timer: grouped by day with a daily total,
+      scrollable, newest first, individual sessions deletable
+- [x] **Stats view**: today / this week / all-time tiles, plus per-day (last 14)
+      and per-week (last 8) bars
+
+### Recording rules
+
+These are judgment calls, so they're written down rather than left implicit:
+
+| Event | Logged? |
+| --- | --- |
+| Focus phase runs to completion | Yes — the full configured duration |
+| Focus phase completes while the tab is closed | Yes, on next load, stamped at its scheduled end |
+| **Skip** during focus | Yes, the time actually worked, flagged `partial` — but only if ≥ 1 min, so a mis-click doesn't litter the record |
+| **Reset** during focus | No. Reset is the "never mind" escape hatch |
+| Any break | Never |
+| Count-up **Log** | Yes, whatever elapsed. The count-up has no natural end, so logging it is an explicit act |
+| Count-up **Reset** | No — discards |
+
+A session is filed under the day it *started*, in local time, so a stretch that
+crosses midnight counts toward the evening it belongs to.
+
+The phase-end handler is guarded against double-firing: it runs from both the
+interval and the visibility-change catch-up, and `pomoRef` only refreshes on
+render, so without the guard a catch-up call could advance and log the same
+phase twice.
+
 ## Backlog — everything else discussed, nothing dropped
 
-### v2 — planner maturity
+### v2.5 — planner maturity
 - [ ] **Clean planner** — one button that removes all completed (`[x]`) tasks
       from the active document and files them into an archive
 - [ ] **Archive** — completed tasks stored with a completion timestamp, plus the
@@ -124,17 +157,21 @@ Light mode is explicitly out of scope for now (per request).
 - [ ] Undo for "clean planner" (destructive-feeling actions need an escape hatch)
 
 ### v3 — timer ↔ planner integration
-- [ ] Start a pomodoro *against* a specific task from the planner
-- [ ] Log how many pomodoros each task consumed; carry that into the archive
-- [ ] Daily/weekly stats: sessions completed, focus time, tasks closed
+- [x] ~~Daily/weekly stats: sessions completed, focus time~~ — shipped in v2
+- [ ] Pick the timer's task from the planner's todos instead of retyping it
+- [ ] Roll up total time per task name, so "how long did X actually take" is
+      answerable across many sessions
+- [ ] Carry pomodoro counts into the planner archive
 
 ### v4 — settings & quality of life
+- [x] ~~Configurable long-break interval~~ — shipped in v1 (`longEvery`)
 - [ ] Auto-start next phase (opt-in setting)
-- [ ] Configurable long-break interval (currently every 4 sessions)
 - [ ] Chime picker / volume / mute
 - [ ] Keyboard shortcuts (space = start-pause, and friends)
-- [ ] Export & import planner + archive as a `.md` / `.json` file — the real
-      answer to "what if I clear my browser data"
+- [ ] Export & import planner + session log as a `.md` / `.json` file — the real
+      answer to "what if I clear my browser data". Now that there's a session
+      history worth months of data, this matters more than it did at v1.
+- [ ] Edit a logged session (fix a task name, correct a duration)
 - [ ] PWA / offline support (`vite-plugin-pwa`)
 - [ ] Light mode
 
@@ -150,7 +187,8 @@ Light mode is explicitly out of scope for now (per request).
 
 | Risk | Handling |
 | --- | --- |
-| `localStorage` is the only copy of the user's data | Export/import in v4; say so plainly in the UI |
+| `localStorage` is the only copy of the user's data | Export/import in v4; say so plainly in the UI. Now more pressing — the session log accumulates months of history that can't be reconstructed |
+| Session log growing without bound | Capped at 2000 records (~years of heavy use), oldest dropped first |
 | Browser notification permission is a hostile prompt if fired on load | Only request it when the user first starts a timer |
 | Web Audio needs a user gesture before it can play | First `start` click unlocks the audio context |
 | CodeMirror bundle size | Import only the modules used; no `codemirror` meta-package |
@@ -160,9 +198,12 @@ Light mode is explicitly out of scope for now (per request).
 
 ## Status
 
-**v1 is live at https://aryamans.me/pomopomo/** (2026-07-29). Repo:
-`Aryaman73/pomopomo`, Pages source set to GitHub Actions, custom domain
-inherited from `aryaman73.github.io`.
+**Live at https://aryamans.me/pomopomo/.** Repo: `Aryaman73/pomopomo`, Pages
+source set to GitHub Actions, custom domain inherited from
+`aryaman73.github.io`.
 
-Next up is the v2 block — clean planner and the archive — which is the largest
-piece of the original request still outstanding.
+- v1 — timers and planner (2026-07-29)
+- v2 — session record, task names, history and stats (2026-07-29)
+
+Next up is the clean-planner and archive block, which is the largest piece of
+the original request still outstanding.

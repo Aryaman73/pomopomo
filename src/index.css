@@ -139,13 +139,23 @@ body {
   display: grid;
   grid-template-columns: minmax(320px, 400px) minmax(0, 1fr);
   gap: 22px;
-  align-items: start;
+  /* Columns stretch so the planner fills the height of the timer + history
+     stack beside it, rather than leaving a few hundred pixels of dead space. */
+  align-items: stretch;
 }
 
 @media (max-width: 900px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* The timer and its history stack together in the left column. */
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
 }
 
 .panel {

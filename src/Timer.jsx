@@ -59,9 +59,12 @@ export default function Timer(props) {
     elapsed,
     progress,
     otherRunning,
+    task,
+    setTask,
     toggle,
     reset,
     skip,
+    logCountup,
     resetCycle,
   } = props;
 
@@ -123,6 +126,18 @@ export default function Timer(props) {
           />
         )}
 
+        <input
+          className="task-input"
+          type="text"
+          value={task}
+          maxLength={200}
+          onChange={(e) => setTask(e.target.value)}
+          placeholder="What are you working on? (optional)"
+          aria-label="Task name for this session"
+        />
+        {/* Each mode keeps its own label, since the two timers run
+            independently and may well be tracking different things. */}
+
         <div className={`dial phase-${isCountup ? "countup" : phase}`}>
           <svg viewBox="0 0 180 180" aria-hidden="true">
             <circle className="dial-track" cx="90" cy="90" r="78" />
@@ -161,11 +176,33 @@ export default function Timer(props) {
           <button className="btn btn-primary btn-start" onClick={toggle}>
             {running ? "Pause" : "Start"}
           </button>
-          <button className="btn" onClick={reset}>
+          {isCountup && (
+            <button
+              className="btn"
+              onClick={logCountup}
+              disabled={elapsed < 1000}
+              title="Record this stretch and clear the timer"
+            >
+              Log
+            </button>
+          )}
+          <button
+            className="btn"
+            onClick={reset}
+            title={
+              isCountup
+                ? "Discard this stretch without recording it"
+                : "Restart this phase without recording it"
+            }
+          >
             Reset
           </button>
           {!isCountup && (
-            <button className="btn" onClick={skip}>
+            <button
+              className="btn"
+              onClick={skip}
+              title="Move on, recording whatever focus time you did"
+            >
               Skip
             </button>
           )}
