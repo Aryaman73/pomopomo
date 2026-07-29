@@ -134,7 +134,7 @@ These are judgment calls, so they're written down rather than left implicit:
 | **Skip** during focus | Yes, the time actually worked, flagged `partial` — but only if ≥ 1 min, so a mis-click doesn't litter the record |
 | **Reset** during focus | No. Reset is the "never mind" escape hatch |
 | Any break | Never |
-| Count-up **Log** | Yes, whatever elapsed. The count-up has no natural end, so logging it is an explicit act |
+| Count-up **Finish** | Yes, whatever elapsed. The count-up has no natural end, so logging it is an explicit act |
 | Count-up **Reset** | No — discards |
 
 A session is filed under the day it *started*, in local time, so a stretch that
@@ -220,7 +220,7 @@ breaks the moment anything above the task is edited.
 
 | Risk | Handling |
 | --- | --- |
-| `localStorage` is the only copy of the user's data | Export/import in v5; say so plainly in the UI. **The most pressing item on the list** — between the session log and the archive there are now months of history that cannot be reconstructed from anything else |
+| `localStorage` is the only copy of the user's data | Export/import in v5. **The most pressing item on the list** — between the session log and the archive there are now months of history that cannot be reconstructed from anything else. Note the footer that used to disclose this was removed on request, so there is currently *no* in-UI warning; worth finding a quieter home for that sentence |
 | Session log growing without bound | Capped at 2000 records (~years of heavy use), oldest dropped first |
 | Archive growing without bound | Capped at 5000 entries, oldest dropped first |
 | Two identically worded tasks under one heading share a completion stamp | Accepted; the alternative (keying on line number) breaks on any edit above the task |

@@ -200,20 +200,21 @@ export default function Planner() {
   return (
     <section className="panel planner-panel">
       <div className="panel-head">
-        <div className="segmented segmented-compact" role="group" aria-label="Planner view">
-          <button aria-pressed={showPlanner} onClick={() => switchTo("planner")}>
-            Planner
-          </button>
-          <button aria-pressed={!showPlanner} onClick={() => switchTo("archive")}>
-            Archive
-          </button>
-        </div>
+        <div className="planner-head-left">
+          <div
+            className="segmented segmented-compact"
+            role="group"
+            aria-label="Planner view"
+          >
+            <button aria-pressed={showPlanner} onClick={() => switchTo("planner")}>
+              Planner
+            </button>
+            <button aria-pressed={!showPlanner} onClick={() => switchTo("archive")}>
+              Archive
+            </button>
+          </div>
 
-        {showPlanner ? (
-          <span className="planner-head-right">
-            <span className="planner-count">
-              {counts.done} / {counts.total} done
-            </span>
+          {showPlanner && (
             <button
               className="btn btn-ghost"
               onClick={handleClean}
@@ -222,12 +223,14 @@ export default function Planner() {
             >
               clean{counts.done > 0 ? ` (${counts.done})` : ""}
             </button>
-          </span>
-        ) : (
-          <span className="planner-count">
-            {archive.length} archived
-          </span>
-        )}
+          )}
+        </div>
+
+        <span className="planner-count">
+          {showPlanner
+            ? `${counts.done} / ${counts.total} done`
+            : `${archive.length} archived`}
+        </span>
       </div>
 
       {undo && showPlanner && (
@@ -235,9 +238,21 @@ export default function Planner() {
           <span>
             Archived {undo.count} task{undo.count === 1 ? "" : "s"}.
           </span>
-          <button className="btn btn-ghost" onClick={handleUndo}>
-            undo
-          </button>
+          <span className="planner-undo-actions">
+            <button className="btn btn-ghost" onClick={handleUndo}>
+              undo
+            </button>
+            {/* Dismissing only hides the banner — the tasks stay archived. It
+                drops the undo, which is why it's a separate control from it. */}
+            <button
+              className="planner-undo-close"
+              onClick={() => setUndo(null)}
+              aria-label="Dismiss, keeping the tasks archived"
+              title="Dismiss"
+            >
+              ×
+            </button>
+          </span>
         </div>
       )}
 

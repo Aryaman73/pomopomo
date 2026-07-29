@@ -12,7 +12,6 @@ export default function App() {
       <div className="app">
         <header className="masthead">
           <h1 className="wordmark">pomopomo</h1>
-          <p className="tagline">focus · plan · repeat</p>
         </header>
 
         <main className="layout">
@@ -26,11 +25,6 @@ export default function App() {
           </div>
           <Planner />
         </main>
-
-        <footer className="footer">
-          Everything lives in your browser — no account, no server, nothing sent
-          anywhere. Clearing site data clears your planner.
-        </footer>
       </div>
     </>
   );

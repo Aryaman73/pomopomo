@@ -96,13 +96,17 @@ export default function Timer(props) {
     <section className="panel timer-panel">
       <div className="panel-head">
         <h2 className="panel-title">Timer</h2>
-        <button
-          className="btn btn-ghost"
-          onClick={() => setShowSettings((s) => !s)}
-          aria-expanded={showSettings}
-        >
-          {showSettings ? "close" : "settings"}
-        </button>
+        {/* Every setting here is a pomodoro phase length, so there's nothing to
+            configure while the count-up is showing. */}
+        {!isCountup && (
+          <button
+            className="btn btn-ghost"
+            onClick={() => setShowSettings((s) => !s)}
+            aria-expanded={showSettings}
+          >
+            {showSettings ? "close" : "settings"}
+          </button>
+        )}
       </div>
 
       <div className="panel-body">
@@ -172,6 +176,23 @@ export default function Timer(props) {
           </div>
         </div>
 
+        {/* Reset sits apart from the main controls and small: it's the one
+            action here that throws work away, so it shouldn't have the same
+            visual weight as the buttons you press every session. */}
+        <div className="dial-reset">
+          <button
+            className="btn btn-ghost btn-tiny"
+            onClick={reset}
+            title={
+              isCountup
+                ? "Discard this stretch without recording it"
+                : "Restart this phase without recording it"
+            }
+          >
+            reset
+          </button>
+        </div>
+
         <div className="timer-controls">
           <button className="btn btn-primary btn-start" onClick={toggle}>
             {running ? "Pause" : "Start"}
@@ -183,20 +204,9 @@ export default function Timer(props) {
               disabled={elapsed < 1000}
               title="Record this stretch and clear the timer"
             >
-              Log
+              Finish
             </button>
           )}
-          <button
-            className="btn"
-            onClick={reset}
-            title={
-              isCountup
-                ? "Discard this stretch without recording it"
-                : "Restart this phase without recording it"
-            }
-          >
-            Reset
-          </button>
           {!isCountup && (
             <button
               className="btn"

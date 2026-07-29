@@ -65,8 +65,8 @@ function SessionList({ sessions, removeSession }) {
   if (sessions.length === 0) {
     return (
       <p className="history-empty">
-        Nothing logged yet. Finish a focus session, or hit <strong>Log</strong> on
-        the count-up, and it'll show up here.
+        Nothing logged yet. Complete a focus session, or hit{" "}
+        <strong>Finish</strong> on the count-up, and it'll show up here.
       </p>
     );
   }

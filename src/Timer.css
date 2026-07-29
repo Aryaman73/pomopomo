@@ -100,6 +100,21 @@
 
 /* ── Controls ────────────────────────────────────────────────────────────── */
 
+/* Tucked under the dial, pulled up into the dial's own bottom whitespace so it
+   reads as attached to the time rather than as a third primary control. */
+.dial-reset {
+  display: flex;
+  justify-content: center;
+  margin-top: -14px;
+}
+
+.btn-tiny {
+  padding: 4px 12px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
 .timer-controls {
   display: flex;
   gap: 8px;

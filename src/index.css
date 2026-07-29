@@ -107,7 +107,6 @@ body {
 .masthead {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
 }
@@ -124,14 +123,6 @@ body {
   background-clip: text;
   color: transparent;
   text-shadow: 0 0 34px rgba(255, 94, 219, 0.35);
-}
-
-.tagline {
-  margin: 0;
-  color: var(--text-faint);
-  font-size: 12.5px;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
 }
 
 /* Two columns on desktop, stacked on anything narrow. */
@@ -171,7 +162,10 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  /* Wraps as whole units in a narrow column. Without this the controls shrink
+     and overlap each other rather than moving to a second row. */
+  flex-wrap: wrap;
+  gap: 4px 12px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--line);
   background: linear-gradient(
@@ -213,6 +207,8 @@ button {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  /* A label like "clean (2)" must never break across lines. */
+  white-space: nowrap;
   transition: background 0.15s, border-color 0.15s, transform 0.08s;
 }
 
@@ -341,18 +337,6 @@ input[type="search"]:focus,
 .segmented button:focus-visible {
   outline: 2px solid var(--cyan);
   outline-offset: 2px;
-}
-
-.footer {
-  margin-top: auto;
-  padding-top: 8px;
-  color: var(--text-faint);
-  font-size: 12px;
-  text-align: center;
-}
-
-.footer a {
-  color: var(--text-dim);
 }
 
 @media (prefers-reduced-motion: reduce) {
