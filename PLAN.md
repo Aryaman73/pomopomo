@@ -145,25 +145,58 @@ interval and the visibility-change catch-up, and `pomoRef` only refreshes on
 render, so without the guard a catch-up call could advance and log the same
 phase twice.
 
+## v3 — clean planner and archive (shipped)
+
+- [x] **Clean planner** — one button lifts every completed (`[x]`) task out of
+      the document and files it in the archive
+- [x] **Archive** — each task stored with its completion time and the heading
+      path it lived under, so "what did I do on the 14th" is answerable
+- [x] **Archive browser** — a tab in the planner panel: grouped by day, with a
+      search box over both task text and heading
+- [x] **Undo** — the clean is reversible, restoring both the document and the
+      archive. Editing by hand afterwards invalidates it, since restoring the
+      pre-clean text would silently throw that edit away.
+- [x] Individual archived tasks can be deleted
+
+### When was a task actually finished?
+
+The interesting problem in this block. Markdown `[x]` carries no timestamp, and
+writing one into the document would clutter text the user owns. So completion
+times live in a side-car map (`pomopomo:done`), keyed on heading + task text and
+**stamped the moment the box is ticked** — not when the planner is later cleaned.
+Cleaning is tidying up and can happen days after the work; stamping then would
+make the archive answer the wrong question.
+
+Each stamp records `{ at, observed }`. `observed` is the honest bit:
+
+- **true** — we watched the box get ticked. A real completion time.
+- **false** — the task was already `[x]` the first time we saw the document
+  (pre-existing planner, another browser). There's nothing better to use than
+  "now", so that's stored, but the archive renders these with a `?` in amber
+  rather than presenting a guess as a fact.
+
+The first cut of this stamped the backfill as observed, which quietly defeated
+the whole point of the flag — caught in testing.
+
+Keying on text rather than line number means two identically worded tasks under
+the same heading share a stamp. That's the accepted cost; keying on position
+breaks the moment anything above the task is edited.
+
 ## Backlog — everything else discussed, nothing dropped
 
-### v2.5 — planner maturity
-- [ ] **Clean planner** — one button that removes all completed (`[x]`) tasks
-      from the active document and files them into an archive
-- [ ] **Archive** — completed tasks stored with a completion timestamp, plus the
-      heading they lived under, so "what did I do on the 14th" is answerable
-- [ ] Archive browser UI — group by day/week, search, restore a task back into
-      the planner
-- [ ] Undo for "clean planner" (destructive-feeling actions need an escape hatch)
+### Archive follow-ups
+- [ ] Restore an archived task back into the planner
+- [ ] Group the archive by week as well as day
+- [ ] Archive stats — tasks closed per day/week, alongside the focus-time chart
 
-### v3 — timer ↔ planner integration
+### v4 — timer ↔ planner integration
 - [x] ~~Daily/weekly stats: sessions completed, focus time~~ — shipped in v2
 - [ ] Pick the timer's task from the planner's todos instead of retyping it
 - [ ] Roll up total time per task name, so "how long did X actually take" is
       answerable across many sessions
 - [ ] Carry pomodoro counts into the planner archive
 
-### v4 — settings & quality of life
+### v5 — settings & quality of life
 - [x] ~~Configurable long-break interval~~ — shipped in v1 (`longEvery`)
 - [ ] Auto-start next phase (opt-in setting)
 - [ ] Chime picker / volume / mute
@@ -187,8 +220,10 @@ phase twice.
 
 | Risk | Handling |
 | --- | --- |
-| `localStorage` is the only copy of the user's data | Export/import in v4; say so plainly in the UI. Now more pressing — the session log accumulates months of history that can't be reconstructed |
+| `localStorage` is the only copy of the user's data | Export/import in v5; say so plainly in the UI. **The most pressing item on the list** — between the session log and the archive there are now months of history that cannot be reconstructed from anything else |
 | Session log growing without bound | Capped at 2000 records (~years of heavy use), oldest dropped first |
+| Archive growing without bound | Capped at 5000 entries, oldest dropped first |
+| Two identically worded tasks under one heading share a completion stamp | Accepted; the alternative (keying on line number) breaks on any edit above the task |
 | Browser notification permission is a hostile prompt if fired on load | Only request it when the user first starts a timer |
 | Web Audio needs a user gesture before it can play | First `start` click unlocks the audio context |
 | CodeMirror bundle size | Import only the modules used; no `codemirror` meta-package |
@@ -204,6 +239,7 @@ source set to GitHub Actions, custom domain inherited from
 
 - v1 — timers and planner (2026-07-29)
 - v2 — session record, task names, history and stats (2026-07-29)
+- v3 — clean planner and archive (2026-07-29)
 
-Next up is the clean-planner and archive block, which is the largest piece of
-the original request still outstanding.
+That closes out everything in the original request. The highest-value item left
+is export/import: two stores now hold history that exists nowhere else.

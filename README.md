@@ -37,6 +37,17 @@ your planner lives in `localStorage` and nowhere else.
 - Enter continues the current list item; Enter on an empty one exits the list
 - Autosaved as you type
 
+**Archive**
+- **clean** lifts every completed task out of the planner and files it in the
+  archive, so the planner stays about what's left. Headings stay put.
+- Each archived task keeps its completion time and the heading path it lived
+  under. Searchable by either.
+- Completion is stamped **when you tick the box**, not when you clean — cleaning
+  is tidying up and can happen days later. Tasks that were already ticked before
+  pomopomo saw them show their time with a `?`, because that one really is a
+  guess.
+- The clean is undoable, until you edit by hand.
+
 ## Running it
 
 ```bash

@@ -2,6 +2,10 @@ import { useMemo, useState } from "react";
 import {
   bucketsByDay,
   bucketsByWeek,
+  totalAll,
+  totalSince,
+} from "./sessions";
+import {
   formatDayLabel,
   formatDayTick,
   formatDuration,
@@ -10,9 +14,7 @@ import {
   groupByDay,
   startOfDay,
   startOfWeek,
-  totalAll,
-  totalSince,
-} from "./sessions";
+} from "./datetime";
 import "./History.css";
 
 const DAYS_SHOWN = 14;
@@ -51,7 +53,14 @@ function SessionRow({ session, onRemove }) {
 }
 
 function SessionList({ sessions, removeSession }) {
-  const groups = useMemo(() => groupByDay(sessions), [sessions]);
+  const groups = useMemo(
+    () =>
+      groupByDay(sessions, (s) => s.start).map((g) => ({
+        ...g,
+        ms: g.items.reduce((sum, s) => sum + s.ms, 0),
+      })),
+    [sessions]
+  );
 
   if (sessions.length === 0) {
     return (

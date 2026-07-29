@@ -23,9 +23,7 @@ import {
   WidgetType,
 } from "@codemirror/view";
 
-// Optional leading indent and bullet, then `[]`, `[ ]`, `[x]` or `[X]`.
-const TASK_RE = /^(\s*(?:[-*+]\s+)?)\[([ xX]?)\]/;
-const HEADING_RE = /^(#{1,6})(\s+)/;
+import { HEADING_RE, TASK_RE } from "./markdown";
 
 /** Flip `[]` ⇄ `[x]` on the line containing `pos`. */
 export function toggleTaskAt(view, pos) {
