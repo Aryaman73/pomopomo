@@ -1,3 +1,4 @@
+import Backup from "./Backup";
 import History from "./History";
 import Planner from "./Planner";
 import Timer from "./Timer";
@@ -12,6 +13,7 @@ export default function App() {
       <div className="app">
         <header className="masthead">
           <h1 className="wordmark">pomopomo</h1>
+          <Backup />
         </header>
 
         <main className="layout">

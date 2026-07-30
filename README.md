@@ -48,6 +48,15 @@ your planner lives in `localStorage` and nowhere else.
   guess.
 - The clean is undoable, until you edit by hand.
 
+**Backups**
+- **export** downloads everything — planner, archive, completion times, session
+  log, timer settings — as a single JSON file.
+- **import** validates the file, shows you what's in it, then asks: **Merge**
+  (adds only sessions and archived tasks you don't already have, leaves your
+  planner and settings alone) or **Replace everything**.
+- Live timer state is deliberately not exported. A countdown's deadline is
+  meaningless on another machine next week.
+
 ## Running it
 
 ```bash

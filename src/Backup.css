@@ -1,0 +1,165 @@
+/* `display: contents` lets the actions and the panel become siblings inside the
+   masthead's flex row: the buttons sit beside the wordmark, and the panel takes
+   a full-width row of its own beneath it. */
+.backup {
+  display: contents;
+}
+
+.backup-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.backup-panel {
+  flex: 1 0 100%;
+}
+
+.backup-panel .panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.backup-note {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-faint);
+  max-width: 62ch;
+}
+
+.backup-note strong {
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.backup-muted {
+  color: var(--text-faint);
+}
+
+/* File inputs can't be restyled directly; style the button it renders. */
+.backup-file {
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-dim);
+  max-width: 100%;
+}
+
+.backup-file::file-selector-button {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-right: 12px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(61, 242, 255, 0.06);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.backup-file::file-selector-button:hover {
+  background: rgba(61, 242, 255, 0.14);
+  border-color: var(--line-bright);
+}
+
+.backup-error {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 94, 219, 0.4);
+  border-radius: 9px;
+  background: rgba(255, 94, 219, 0.08);
+  color: var(--magenta);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.backup-pending {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.backup-filename {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--cyan);
+  overflow-wrap: anywhere;
+}
+
+.backup-summary {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.backup-summary strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.backup-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Doubled class on purpose: index.css is bundled after this file, so a bare
+   `.backup-danger` loses to `.btn` on source order and the destructive button
+   ends up looking exactly like the safe one. */
+.btn.backup-danger {
+  border-color: rgba(255, 94, 219, 0.5);
+  background: rgba(255, 94, 219, 0.12);
+  color: var(--magenta);
+}
+
+.btn.backup-danger:hover:not(:disabled) {
+  background: rgba(255, 94, 219, 0.22);
+  border-color: var(--magenta);
+}
+
+.backup-explain {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--text-faint);
+  max-width: 70ch;
+}
+
+.backup-explain strong {
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.backup-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(61, 242, 255, 0.35);
+  border-radius: 11px;
+  background: rgba(61, 242, 255, 0.08);
+  font-size: 13px;
+  color: var(--text);
+}
+
+.backup-result p {
+  margin: 0;
+}

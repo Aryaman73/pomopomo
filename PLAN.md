@@ -182,6 +182,55 @@ Keying on text rather than line number means two identically worded tasks under
 the same heading share a stamp. That's the accepted cost; keying on position
 breaks the moment anything above the task is edited.
 
+## v4 — export and import (shipped)
+
+- [x] **export** downloads everything as `pomopomo-backup-YYYY-MM-DD.json`
+- [x] **import** validates the file, shows what's in it, then offers two
+      explicit choices rather than silently picking one
+- [x] The privacy/durability notice removed with the footer now lives in the
+      import panel, where it's actually relevant
+
+### What travels, and what doesn't
+
+In: the planner document, the archive, completion stamps, the session log, and
+the timer's phase lengths.
+
+Out: anything about what's happening *right now* — which timer is showing, a
+running countdown's deadline, the task name in the input. A deadline is
+meaningless on another machine a week later, and restoring one would resurrect a
+"running" timer that finished long ago.
+
+### Merge vs replace
+
+Two modes, both named plainly, because neither is right for every case:
+
+- **Merge** only ever adds: it unions the session log and archive and leaves the
+  planner and settings alone. Two markdown documents can't be combined without
+  losing one, so it doesn't try.
+- **Replace** overwrites planner, settings, log and archive, and clears live
+  timer state — a countdown belonging to data that no longer exists would
+  otherwise keep running and log a session against the imported history.
+
+Merge dedupes on record id *and* a content signature. Ids are
+`${timestamp}-${sequence}` with the sequence restarting each page load, so two
+devices can in principle mint the same id; the signature is what actually
+establishes that two records are the same record.
+
+Merging completion stamps prefers an `observed` stamp over a backfilled guess,
+then the earlier of two equally trustworthy ones.
+
+### The reload, and the flush that fights it
+
+Importing writes to `localStorage` and reloads, because every component seeds its
+state from storage on mount — re-reading it all at once beats threading an import
+through a dozen `useState`s.
+
+That collides with the editor's `beforeunload` flush, which would write the
+document still on screen back over the planner just imported, making a planner
+import look like it silently did nothing. `storage.freeze()` is called after the
+import writes and before the reload, turning `save`/`remove` into no-ops so
+nothing can overwrite the imported data on the way out.
+
 ## Backlog — everything else discussed, nothing dropped
 
 ### Archive follow-ups
@@ -201,9 +250,9 @@ breaks the moment anything above the task is edited.
 - [ ] Auto-start next phase (opt-in setting)
 - [ ] Chime picker / volume / mute
 - [ ] Keyboard shortcuts (space = start-pause, and friends)
-- [ ] Export & import planner + session log as a `.md` / `.json` file — the real
-      answer to "what if I clear my browser data". Now that there's a session
-      history worth months of data, this matters more than it did at v1.
+- [x] ~~Export & import~~ — shipped in v4
+- [ ] Plain-markdown export of the planner alone, for reading outside pomopomo
+      (the JSON backup is for round-tripping, not for reading)
 - [ ] Edit a logged session (fix a task name, correct a duration)
 - [ ] PWA / offline support (`vite-plugin-pwa`)
 - [ ] Light mode
@@ -220,7 +269,7 @@ breaks the moment anything above the task is edited.
 
 | Risk | Handling |
 | --- | --- |
-| `localStorage` is the only copy of the user's data | Export/import in v5. **The most pressing item on the list** — between the session log and the archive there are now months of history that cannot be reconstructed from anything else. Note the footer that used to disclose this was removed on request, so there is currently *no* in-UI warning; worth finding a quieter home for that sentence |
+| `localStorage` is the only copy of the user's data | Addressed in v4: **export** writes everything to a file, and the import panel says plainly that this browser holds the only copy. Backups are still manual — nothing prompts you to take one |
 | Session log growing without bound | Capped at 2000 records (~years of heavy use), oldest dropped first |
 | Archive growing without bound | Capped at 5000 entries, oldest dropped first |
 | Two identically worded tasks under one heading share a completion stamp | Accepted; the alternative (keying on line number) breaks on any edit above the task |
@@ -240,6 +289,8 @@ source set to GitHub Actions, custom domain inherited from
 - v1 — timers and planner (2026-07-29)
 - v2 — session record, task names, history and stats (2026-07-29)
 - v3 — clean planner and archive (2026-07-29)
+- v4 — export and import (2026-07-30)
 
-That closes out everything in the original request. The highest-value item left
-is export/import: two stores now hold history that exists nowhere else.
+Everything in the original request is shipped, and the data is no longer trapped
+in one browser. What's left is polish: keyboard shortcuts, auto-start, editing a
+logged session, PWA/offline, light mode.
