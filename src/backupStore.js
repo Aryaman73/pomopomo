@@ -84,6 +84,7 @@ function cleanSessions(raw) {
       end: isFiniteNumber(s.end) ? s.end : s.start + s.ms,
       ms: Math.round(s.ms),
       partial: !!s.partial,
+      adjusted: !!s.adjusted,
     }));
 }
 

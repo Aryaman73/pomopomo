@@ -137,20 +137,25 @@ function restorePomo(settings) {
 // paused is the one combination that isn't.
 const COUNTUP_RESUME_GRACE = 5 * 60_000;
 
+// A ceiling on a hand-set count-up. Anything past this is a typo, not a
+// work session.
+export const MAX_COUNTUP_MS = 24 * 60 * 60_000;
+
 function initialCountup() {
   const saved = load("countup", null);
-  const fresh = { running: false, base: 0, startedAt: null };
+  const fresh = { running: false, base: 0, startedAt: null, adjusted: false };
   if (!saved || typeof saved.base !== "number") return fresh;
 
+  const adjusted = !!saved.adjusted;
   if (saved.running && saved.startedAt) {
     const gap = Date.now() - saved.startedAt;
     if (gap <= COUNTUP_RESUME_GRACE) {
       // Keep the clock running; `startedAt` is absolute so the gap is included.
-      return { running: true, base: saved.base, startedAt: saved.startedAt };
+      return { running: true, base: saved.base, startedAt: saved.startedAt, adjusted };
     }
-    return { running: false, base: saved.base, startedAt: null };
+    return { running: false, base: saved.base, startedAt: null, adjusted };
   }
-  return { ...fresh, base: saved.base };
+  return { ...fresh, base: saved.base, adjusted };
 }
 
 export function useTimer() {
@@ -315,7 +320,12 @@ export function useTimer() {
     if (mode === "countup") {
       setCountup((c) =>
         c.running
-          ? { running: false, base: c.base + (Date.now() - c.startedAt), startedAt: null }
+          ? {
+              ...c,
+              running: false,
+              base: c.base + (Date.now() - c.startedAt),
+              startedAt: null,
+            }
           : c
       );
       return;
@@ -342,7 +352,8 @@ export function useTimer() {
   // logging it. If you want partial credit, use Skip.
   const reset = useCallback(() => {
     if (mode === "countup") {
-      setCountup({ running: false, base: 0, startedAt: null });
+      // A fresh timer, so it's no longer carrying a hand-set duration.
+      setCountup({ running: false, base: 0, startedAt: null, adjusted: false });
       return;
     }
     setPomo((p) => ({
@@ -400,10 +411,36 @@ export function useTimer() {
         start: end - ms,
         end,
         ms,
+        adjusted: c.adjusted,
       })
     );
-    setCountup({ running: false, base: 0, startedAt: null });
+    setCountup({ running: false, base: 0, startedAt: null, adjusted: false });
   }, [logSession]);
+
+  /**
+   * Set the count-up's elapsed time by hand. For the one case that actually
+   * needs it: a timer left running through lunch, where the clock is now wrong
+   * and the alternative is losing the session or logging a fiction.
+   *
+   * Every session logged from a hand-set timer is flagged, and the flag shows in
+   * the history. That's deliberate — the point of the record is that it reflects
+   * work that happened, so a number you typed shouldn't be indistinguishable
+   * from one the clock measured.
+   */
+  const adjustCountup = useCallback((ms) => {
+    const c = countupRef.current;
+    const current = c.running ? c.base + (Date.now() - c.startedAt) : c.base;
+    const next = Math.max(0, Math.min(Math.round(ms), MAX_COUNTUP_MS));
+    setCountup({
+      running: c.running,
+      base: next,
+      // Re-anchor a running timer so it carries on from the corrected total
+      // instead of jumping back to the old one on the next tick.
+      startedAt: c.running ? Date.now() : null,
+      // Applying the value it already had isn't an adjustment.
+      adjusted: c.adjusted || Math.abs(next - current) >= 1000,
+    });
+  }, []);
 
   const resetCycle = useCallback(() => {
     setPomo({
@@ -467,6 +504,7 @@ export function useTimer() {
     otherRunning: mode === "countup" ? pomo.running : countup.running,
     remaining: pomoRemaining,
     elapsed: countupElapsed,
+    countupAdjusted: countup.adjusted,
     progress: total > 0 ? 1 - pomoRemaining / total : 0,
 
     task: tasks[mode],
@@ -482,6 +520,7 @@ export function useTimer() {
     reset,
     skip,
     logCountup,
+    adjustCountup,
     resetCycle,
   };
 }

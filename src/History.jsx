@@ -37,6 +37,14 @@ function SessionRow({ session, onRemove }) {
             partial
           </span>
         )}
+        {session.adjusted && (
+          <span
+            className="session-adjusted"
+            title="The duration was set by hand, not measured by the timer"
+          >
+            adjusted
+          </span>
+        )}
       </span>
       <span className="session-time">{formatTimeOfDay(session.start)}</span>
       <span className="session-duration">{formatDuration(session.ms)}</span>

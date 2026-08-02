@@ -45,7 +45,15 @@ export function saveSessions(list) {
 
 let sequence = 0;
 
-export function makeSession({ kind, task, start, end, ms, partial = false }) {
+export function makeSession({
+  kind,
+  task,
+  start,
+  end,
+  ms,
+  partial = false,
+  adjusted = false,
+}) {
   sequence += 1;
   return {
     id: `${end}-${sequence}`,
@@ -55,6 +63,9 @@ export function makeSession({ kind, task, start, end, ms, partial = false }) {
     end,
     ms: Math.max(0, Math.round(ms)),
     partial,
+    // The duration was typed in rather than measured. Kept so the record can
+    // say which numbers it actually observed.
+    adjusted,
   };
 }
 

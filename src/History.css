@@ -120,15 +120,27 @@
   font-style: normal;
 }
 
-.session-partial {
+.session-partial,
+.session-adjusted {
   flex: none;
   font-size: 9.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--amber);
-  border: 1px solid rgba(255, 203, 94, 0.35);
   border-radius: 4px;
   padding: 1px 4px;
+}
+
+.session-partial {
+  color: var(--amber);
+  border: 1px solid rgba(255, 203, 94, 0.35);
+}
+
+/* Distinct from `partial`: that one is a real measurement of a shortened
+   session, this one is a number somebody typed. */
+.session-adjusted {
+  color: var(--violet);
+  border: 1px solid rgba(164, 121, 255, 0.4);
+  cursor: help;
 }
 
 .session-time {

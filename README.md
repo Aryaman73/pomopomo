@@ -28,6 +28,9 @@ your planner lives in `localStorage` and nowhere else.
 - Skipping out of a focus phase logs the time you actually did (flagged
   *partial*); Reset discards it. A pomodoro that finishes while the tab is
   closed is still recorded on next load.
+- Left a count-up running through lunch? **adjust** sets the elapsed time by
+  hand. Those sessions are flagged *adjusted*, so the record stays honest about
+  which durations were measured and which were typed.
 
 **Planner**
 - Live-preview markdown: `# headings` render as headings, `[] task` renders as a

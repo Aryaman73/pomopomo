@@ -231,6 +231,37 @@ import look like it silently did nothing. `storage.freeze()` is called after the
 import writes and before the reload, turning `save`/`remove` into no-ops so
 nothing can overwrite the imported data on the way out.
 
+## v5 — adjusting a forgotten count-up (shipped)
+
+- [x] **adjust** next to `reset` in count-up mode, shown only once there's time
+      on the clock. Set hours and minutes; a running timer carries on from the
+      corrected total.
+- [x] Sessions logged from a hand-set timer are flagged `adjusted` and badged in
+      the history.
+
+### Allowed, but not encouraged
+
+The need is real — a timer left running through lunch, where the alternative is
+losing the session or logging a fiction. But an editable clock invites inventing
+numbers, so the design pushes back in three places rather than one:
+
+1. It's a small secondary link beside `reset`, not a control in the main row,
+   and it doesn't exist until the clock has something on it.
+2. The panel says what it's for in a sentence.
+3. **The session is flagged.** This is the one that matters. The record's whole
+   value is that it reflects work that happened, so a number somebody typed
+   should not be indistinguishable from one the clock measured. `adjusted` sits
+   alongside the existing `partial` on sessions and `estimated` on archive
+   times — the same principle each time: mark what was asserted rather than
+   observed.
+
+Applying the panel unchanged is not an adjustment and doesn't set the flag —
+otherwise merely opening it to look would taint the record (and would silently
+truncate the seconds, since the inputs are whole minutes).
+
+Deliberately not built: editing a session *after* it's logged. That's a
+different feature with a different risk profile, and it's still in the backlog.
+
 ## Backlog — everything else discussed, nothing dropped
 
 ### Archive follow-ups
@@ -290,6 +321,7 @@ source set to GitHub Actions, custom domain inherited from
 - v2 — session record, task names, history and stats (2026-07-29)
 - v3 — clean planner and archive (2026-07-29)
 - v4 — export and import (2026-07-30)
+- v5 — adjusting a forgotten count-up (2026-08-02)
 
 Everything in the original request is shipped, and the data is no longer trapped
 in one browser. What's left is polish: keyboard shortcuts, auto-start, editing a

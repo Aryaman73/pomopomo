@@ -46,6 +46,80 @@ function SettingsPanel({ settings, updateSettings, onClose }) {
   );
 }
 
+/**
+ * Hand-correct the count-up. Deliberately plain and slightly out of the way:
+ * this exists for a timer left running through lunch, not as a way to author
+ * sessions that never happened.
+ */
+function AdjustPanel({ elapsed, onApply, onClose }) {
+  const seconds = Math.max(0, Math.round(elapsed / 1000));
+  const initialHours = Math.floor(seconds / 3600);
+  const initialMinutes = Math.floor((seconds % 3600) / 60);
+
+  const [hours, setHours] = useState(String(initialHours));
+  const [minutes, setMinutes] = useState(String(initialMinutes));
+
+  const parse = (value, max) => {
+    const n = Math.floor(Number(value));
+    return Number.isFinite(n) ? Math.min(max, Math.max(0, n)) : 0;
+  };
+
+  const submit = (event) => {
+    event.preventDefault();
+    const h = parse(hours, 24);
+    const m = parse(minutes, 59);
+    // Unchanged means unchanged — applying the same hours and minutes shouldn't
+    // discard the seconds or mark the session as hand-set.
+    if (h !== initialHours || m !== initialMinutes) {
+      onApply((h * 3600 + m * 60) * 1000);
+    }
+    onClose();
+  };
+
+  return (
+    <form className="settings adjust" onSubmit={submit}>
+      <label className="settings-row">
+        <span>Time worked</span>
+        <span className="settings-input adjust-input">
+          <input
+            type="number"
+            min="0"
+            max="24"
+            value={hours}
+            onChange={(e) => setHours(e.target.value)}
+            aria-label="Hours worked"
+            autoFocus
+          />
+          <em>h</em>
+          <input
+            type="number"
+            min="0"
+            max="59"
+            value={minutes}
+            onChange={(e) => setMinutes(e.target.value)}
+            aria-label="Minutes worked"
+          />
+          <em>m</em>
+        </span>
+      </label>
+
+      <p className="adjust-note">
+        For a timer you left running. Sessions with a hand-set time are marked{" "}
+        <em>adjusted</em> in your history.
+      </p>
+
+      <div className="adjust-actions">
+        <button type="button" className="btn btn-ghost btn-tiny" onClick={onClose}>
+          cancel
+        </button>
+        <button type="submit" className="btn btn-tiny">
+          Set
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export default function Timer(props) {
   const {
     mode,
@@ -61,14 +135,17 @@ export default function Timer(props) {
     otherRunning,
     task,
     setTask,
+    countupAdjusted,
     toggle,
     reset,
     skip,
     logCountup,
+    adjustCountup,
     resetCycle,
   } = props;
 
   const [showSettings, setShowSettings] = useState(false);
+  const [showAdjust, setShowAdjust] = useState(false);
   const isCountup = mode === "countup";
   const display = formatClock(isCountup ? elapsed : remaining);
 
@@ -180,9 +257,23 @@ export default function Timer(props) {
             action here that throws work away, so it shouldn't have the same
             visual weight as the buttons you press every session. */}
         <div className="dial-reset">
+          {/* Only offered once there's something on the clock to correct. */}
+          {isCountup && elapsed >= 1000 && (
+            <button
+              className="btn btn-ghost btn-tiny"
+              onClick={() => setShowAdjust((s) => !s)}
+              aria-expanded={showAdjust}
+              title="Correct the time on a timer you left running"
+            >
+              adjust
+            </button>
+          )}
           <button
             className="btn btn-ghost btn-tiny"
-            onClick={reset}
+            onClick={() => {
+              setShowAdjust(false);
+              reset();
+            }}
             title={
               isCountup
                 ? "Discard this stretch without recording it"
@@ -192,6 +283,20 @@ export default function Timer(props) {
             reset
           </button>
         </div>
+
+        {isCountup && showAdjust && (
+          <AdjustPanel
+            elapsed={elapsed}
+            onApply={adjustCountup}
+            onClose={() => setShowAdjust(false)}
+          />
+        )}
+
+        {isCountup && countupAdjusted && !showAdjust && (
+          <p className="timer-note timer-adjusted">
+            Time set by hand — this session will be marked <em>adjusted</em>.
+          </p>
+        )}
 
         <div className="timer-controls">
           <button className="btn btn-primary btn-start" onClick={toggle}>
