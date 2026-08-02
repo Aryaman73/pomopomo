@@ -200,20 +200,22 @@ export default function Planner() {
   return (
     <section className="panel planner-panel">
       <div className="panel-head">
-        <div className="planner-head-left">
-          <div
-            className="segmented segmented-compact"
-            role="group"
-            aria-label="Planner view"
-          >
-            <button aria-pressed={showPlanner} onClick={() => switchTo("planner")}>
-              Planner
-            </button>
-            <button aria-pressed={!showPlanner} onClick={() => switchTo("archive")}>
-              Archive
-            </button>
-          </div>
+        <div
+          className="segmented segmented-compact"
+          role="group"
+          aria-label="Planner view"
+        >
+          <button aria-pressed={showPlanner} onClick={() => switchTo("planner")}>
+            Planner
+          </button>
+          <button aria-pressed={!showPlanner} onClick={() => switchTo("archive")}>
+            Archive
+          </button>
+        </div>
 
+        {/* Grouped so that a header too narrow for one row drops `clean` and the
+            count together, rather than stranding the count on its own line. */}
+        <div className="planner-head-right">
           {showPlanner && (
             <button
               className="btn btn-ghost"
@@ -224,13 +226,13 @@ export default function Planner() {
               clean{counts.done > 0 ? ` (${counts.done})` : ""}
             </button>
           )}
-        </div>
 
-        <span className="planner-count">
-          {showPlanner
-            ? `${counts.done} / ${counts.total} done`
-            : `${archive.length} archived`}
-        </span>
+          <span className="planner-count">
+            {showPlanner
+              ? `${counts.done} / ${counts.total} done`
+              : `${archive.length} archived`}
+          </span>
+        </div>
       </div>
 
       {undo && showPlanner && (

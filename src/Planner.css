@@ -20,11 +20,19 @@
   margin-left: auto;
 }
 
-.planner-head-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
+/* Wide enough for one row: the group dissolves so `clean` sits next to the view
+   switch and the count is pushed to the far edge. */
+.planner-head-right {
+  display: contents;
+}
+
+@media (max-width: 560px) {
+  .planner-head-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
 }
 
 /* A header-sized version of the mode switch used in the timer. */
