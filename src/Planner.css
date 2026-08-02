@@ -26,12 +26,17 @@
   display: contents;
 }
 
+/* Mobile headers centre their rows, so the count stops pushing itself to the
+   edge and simply follows `clean`. */
 @media (max-width: 560px) {
   .planner-head-right {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-left: auto;
+  }
+
+  .planner-count {
+    margin-left: 0;
   }
 }
 

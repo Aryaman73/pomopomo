@@ -175,6 +175,16 @@ body {
   );
 }
 
+/* Mobile: headers centre their rows instead of pinning one group to each edge.
+   A header that has split across two rows looks lopsided pinned, and centring
+   only the split ones would leave the timer and history headers out of step. */
+@media (max-width: 560px) {
+  .masthead,
+  .panel-head {
+    justify-content: center;
+  }
+}
+
 .panel-title {
   margin: 0;
   font-family: var(--font-display);

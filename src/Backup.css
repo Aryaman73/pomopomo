@@ -12,6 +12,14 @@
   margin-left: auto;
 }
 
+/* The masthead centres its rows on mobile, so the actions follow the wordmark
+   rather than holding the far edge. */
+@media (max-width: 560px) {
+  .backup-actions {
+    margin-left: 0;
+  }
+}
+
 .backup-panel {
   flex: 1 0 100%;
 }
