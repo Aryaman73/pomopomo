@@ -6,9 +6,10 @@ import {
   totalSince,
 } from "./sessions";
 import {
-  bestStreak,
   currentStreak,
+  fullDays,
   isComplete,
+  isStarted,
   recentDays,
 } from "./dailiesStore";
 import {
@@ -203,8 +204,8 @@ function Stats({ sessions }) {
 }
 
 /**
- * The dailies streak. Only whole days count: a day is a streak day when there
- * was something on the list and all of it got ticked before the day rolled over.
+ * The dailies streak. A day keeps the streak alive as soon as anything on the
+ * list is ticked; clearing the whole list is a *full* day, counted separately.
  *
  * Today is shown but doesn't break anything until it's over — a counter that
  * read zero every morning would train you to ignore it.
@@ -215,16 +216,16 @@ function DailiesView({ dailies }) {
   // makes the two disagree until the day actually turns.
   const { log, counts, day } = dailies;
 
-  const { current, best, days } = useMemo(
+  const { current, full, days } = useMemo(
     () => ({
       current: currentStreak(log, day, counts),
-      best: bestStreak(log, day, counts),
+      full: fullDays(log, day, counts),
       days: recentDays(log, day, counts, DAYS_SHOWN),
     }),
     [log, counts, day]
   );
 
-  const todayDone = counts.total > 0 && counts.done >= counts.total;
+  const todayDone = isComplete({ ...counts, day });
 
   return (
     <div className="stats">
@@ -235,9 +236,9 @@ function DailiesView({ dailies }) {
           <span className="stat-sub">day{current === 1 ? "" : "s"}</span>
         </div>
         <div className="stat-tile">
-          <span className="stat-value">{best}</span>
-          <span className="stat-label">best</span>
-          <span className="stat-sub">day{best === 1 ? "" : "s"}</span>
+          <span className="stat-value">{full}</span>
+          <span className="stat-label">full days</span>
+          <span className="stat-sub">all ticked</span>
         </div>
         <div className="stat-tile">
           <span className="stat-value">
@@ -254,7 +255,7 @@ function DailiesView({ dailies }) {
             ? "unknown"
             : isComplete(entry)
               ? "complete"
-              : entry.done > 0
+              : isStarted(entry)
                 ? "partial"
                 : "none";
           return (
@@ -272,15 +273,16 @@ function DailiesView({ dailies }) {
       </div>
 
       <p className="stats-note">
-        Last {DAYS_SHOWN} days. A day counts once everything on the list is
-        ticked; days you never opened pomopomo don't count.
+        Last {DAYS_SHOWN} days. <span className="daily-key daily-key-complete" />{" "}
+        the whole list, <span className="daily-key daily-key-partial" /> a start —
+        both keep the streak. Days you never opened pomopomo don't.
       </p>
 
       {counts.total === 0 && (
         <p className="history-empty">
           There's nothing on your dailies list yet. Add a line like{" "}
-          <strong>[] make the bed</strong> to it and a streak starts the first
-          day you clear it.
+          <strong>[] make the bed</strong> to it and the streak starts the first
+          day you tick something.
         </p>
       )}
     </div>

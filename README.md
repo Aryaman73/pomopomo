@@ -61,9 +61,12 @@ your planner lives in `localStorage` and nowhere else.
   the header to move the hour.
 - Only the ticks reset. The list you wrote stays exactly as you left it.
 - **Dailies** in the history panel keeps the streak: consecutive days you
-  cleared the whole list, your best run, and a strip of the last 14 days. An
-  unfinished today doesn't break it — the day isn't over. A day you never
-  opened pomopomo does, and shows as a dashed cell rather than an empty one.
+  ticked *anything*, alongside a total of the days you cleared the whole list,
+  and a strip of the last 14 days — green for a full day, yellow for a start,
+  and both keep the streak alive.
+- An unfinished today doesn't break the streak, because the day isn't over. A
+  day you never opened pomopomo does, and shows as a dashed cell rather than an
+  empty one.
 
 **Sizing**
 - The planner and the dailies list are as tall as you drag them — grab the
