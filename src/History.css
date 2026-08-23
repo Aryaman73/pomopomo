@@ -288,3 +288,42 @@
   font-size: 11px;
   color: var(--text-faint);
 }
+
+/* ── Dailies ─────────────────────────────────────────────────────────────── */
+
+/* One cell per day, stretched to fill the row so the strip reads as a single
+   run of days however many are shown. */
+.daily-strip {
+  display: flex;
+  gap: 4px;
+  align-items: stretch;
+}
+
+.daily-dot {
+  flex: 1 1 0;
+  min-width: 6px;
+  height: 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+/* A day pomopomo never saw isn't the same as a day you didn't finish. */
+.daily-dot-unknown {
+  border-style: dashed;
+  opacity: 0.55;
+}
+
+.daily-dot-partial {
+  background: rgba(164, 121, 255, 0.45);
+  border-color: var(--violet);
+}
+
+.daily-dot-complete {
+  background: var(--cyan);
+  border-color: var(--cyan);
+}
+
+.daily-dot-today {
+  box-shadow: 0 0 0 2px rgba(255, 94, 219, 0.55);
+}

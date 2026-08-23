@@ -163,51 +163,6 @@
 
 /* ── Settings ────────────────────────────────────────────────────────────── */
 
-.settings {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 11px;
-  background: rgba(0, 0, 0, 0.28);
-}
-
-.settings-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 13.5px;
-  color: var(--text-dim);
-}
-
-.settings-input {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.settings-input input {
-  width: 68px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.settings-input em {
-  font-style: normal;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-  min-width: 58px;
-}
-
-.settings-close {
-  align-self: flex-end;
-  margin-top: 2px;
-}
-
 /* ── Adjust (count-up) ───────────────────────────────────────────────────── */
 
 .adjust-input input {

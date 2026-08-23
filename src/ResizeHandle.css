@@ -1,0 +1,36 @@
+.resize-handle {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 13px;
+  cursor: ns-resize;
+  border-top: 1px solid transparent;
+  /* Without this a touch drag scrolls the page instead of moving the handle. */
+  touch-action: none;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.resize-handle:hover,
+.resize-handle:focus-visible {
+  background: rgba(61, 242, 255, 0.08);
+  border-top-color: var(--line);
+  outline: none;
+}
+
+.resize-grip {
+  width: 30px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--line);
+  transition: background 0.12s, width 0.12s;
+}
+
+.resize-handle:hover .resize-grip {
+  background: var(--line-bright);
+}
+
+.resize-handle:focus-visible .resize-grip {
+  background: var(--cyan);
+  width: 46px;
+}

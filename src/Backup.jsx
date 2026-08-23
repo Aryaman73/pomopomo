@@ -37,6 +37,19 @@ function Summary({ summary }) {
           </>
         )}
       </li>
+      <li>
+        {summary.dailiesChars === null ? (
+          <span className="backup-muted">No dailies list</span>
+        ) : (
+          <>
+            <strong>Dailies list</strong>
+            <span> · {summary.dailiesChars.toLocaleString()} characters</span>
+            {summary.dailiesDays > 0 && (
+              <span> · {plural(summary.dailiesDays, "day")} of streak</span>
+            )}
+          </>
+        )}
+      </li>
       {summary.hasSettings && (
         <li>
           <strong>Timer settings</strong>
@@ -140,13 +153,17 @@ export default function Backup() {
                   <p>
                     Replaced everything: {plural(result.sessions, "session")} and{" "}
                     {plural(result.archive, "archived task")}
-                    {result.planner && ", plus the planner document"}.
+                    {result.planner && ", plus the planner"}
+                    {result.dailies && " and the dailies list"}.
                   </p>
                 ) : (
                   <p>
                     Merged in {plural(result.sessions, "new session")} and{" "}
-                    {plural(result.archive, "new archived task")}. Your planner
-                    and settings were left as they were.
+                    {plural(result.archive, "new archived task")}
+                    {result.dailyDays > 0 &&
+                      `, and ${plural(result.dailyDays, "day")} of dailies`}
+                    . Your planner, dailies list and settings were left as they
+                    were.
                   </p>
                 )}
                 <button className="btn btn-ghost btn-tiny" onClick={reset}>
@@ -189,13 +206,13 @@ export default function Backup() {
 
                     <p className="backup-explain">
                       <strong>Merge</strong> only adds — sessions and archived
-                      tasks you don't already have. Your planner and settings
-                      stay as they are, since two markdown documents can't be
-                      combined without losing one.
+                      tasks you don't already have. Your planner, dailies list
+                      and settings stay as they are, since two markdown
+                      documents can't be combined without losing one.
                       <br />
-                      <strong>Replace</strong> overwrites the planner, settings,
-                      session log and archive with the file's contents, and
-                      resets any running timer.
+                      <strong>Replace</strong> overwrites the planner, dailies,
+                      settings, session log and archive with the file's
+                      contents, and resets any running timer.
                     </p>
                   </div>
                 )}

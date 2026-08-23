@@ -5,19 +5,29 @@
 // can't be reconstructed, so being able to get it out as a file is not a
 // nice-to-have.
 //
-// What travels: the planner document, the archive, completion stamps, the
-// session log, and the timer's phase lengths. What doesn't: anything about
-// what's happening *right now* — which timer is showing, a running countdown's
-// deadline, the task name in the input. A deadline is meaningless on another
-// machine a week later, and restoring one would resurrect a "running" timer that
-// finished long ago.
+// What travels: the planner document, the dailies list with its rollover hour,
+// the day it last reset and its day log, the archive, completion stamps, the
+// session log, and the timer's phase lengths. What doesn't: anything about what's happening *right now* — which
+// timer is showing, a running countdown's deadline, the task name in the input.
+// A deadline is meaningless on another machine a week later, and restoring one
+// would resurrect a "running" timer that finished long ago.
 
 import { freeze, load, remove, save } from "./storage";
+import {
+  DAY_KEY,
+  DOC_KEY,
+  HOUR_KEY,
+  clampHour,
+  cleanLog,
+  loadHour,
+  loadLog,
+  saveLog,
+} from "./dailiesStore";
 import { loadSessions, saveSessions } from "./sessions";
 import { loadArchive, loadDoneMap, saveArchive, saveDoneMap } from "./archiveStore";
 
 export const FORMAT = "pomopomo-backup";
-export const VERSION = 1;
+export const VERSION = 2;
 
 const RESULT_KEY = "pomopomo:importResult";
 
@@ -30,6 +40,12 @@ export function buildBackup() {
     exportedAt: new Date().toISOString(),
     data: {
       planner: load("planner", ""),
+      dailies: load(DOC_KEY, ""),
+      // The day the dailies last reset travels too, so a backup restored a week
+      // later clears its ticks instead of adopting them as today's.
+      dailiesDay: load(DAY_KEY, null),
+      dailiesHour: loadHour(),
+      dailiesLog: loadLog(),
       settings: load("settings", null),
       sessions: loadSessions(),
       archive: loadArchive(),
@@ -159,6 +175,13 @@ export function parseBackup(text) {
 
   const data = {
     planner: typeof raw.data.planner === "string" ? raw.data.planner : null,
+    dailies: typeof raw.data.dailies === "string" ? raw.data.dailies : null,
+    dailiesDay:
+      typeof raw.data.dailiesDay === "string" ? raw.data.dailiesDay : null,
+    dailiesHour: isFiniteNumber(raw.data.dailiesHour)
+      ? clampHour(raw.data.dailiesHour)
+      : null,
+    dailiesLog: cleanLog(raw.data.dailiesLog),
     settings: cleanSettings(raw.data.settings),
     sessions: cleanSessions(raw.data.sessions),
     archive: cleanArchive(raw.data.archive),
@@ -167,6 +190,7 @@ export function parseBackup(text) {
 
   const empty =
     data.planner === null &&
+    data.dailies === null &&
     !data.settings &&
     data.sessions.length === 0 &&
     data.archive.length === 0;
@@ -184,6 +208,8 @@ export function parseBackup(text) {
       sessions: data.sessions.length,
       archive: data.archive.length,
       plannerChars: data.planner === null ? null : data.planner.length,
+      dailiesChars: data.dailies === null ? null : data.dailies.length,
+      dailiesDays: data.dailiesLog.length,
       hasSettings: !!data.settings,
       oldest: starts.length ? Math.min(...starts) : null,
       newest: starts.length ? Math.max(...starts) : null,
@@ -233,9 +259,10 @@ function mergeDone(current, incoming) {
 /**
  * Write an imported backup. `mode` is "merge" or "replace".
  *
- * Merge only ever adds: it unions the session log and archive and leaves the
- * planner and settings alone, because a markdown document can't be merged with
- * another one and silently picking a winner would lose work.
+ * Merge only ever adds: it unions the session log, the archive and the dailies
+ * day log, and leaves the planner, the dailies list and settings alone, because
+ * a markdown document can't be merged with another one and silently picking a
+ * winner would lose work.
  *
  * Replace overwrites all of it, and also clears live timer state — a running
  * countdown belonging to data that no longer exists would otherwise keep going
@@ -244,6 +271,16 @@ function mergeDone(current, incoming) {
 export function applyBackup(data, mode) {
   if (mode === "replace") {
     if (data.planner !== null) save("planner", data.planner);
+    if (data.dailies !== null) {
+      save(DOC_KEY, data.dailies);
+      // No day in the file means an older backup that predates the dailies.
+      // Clearing the marker makes the list adopt today rather than inherit a
+      // day it never had, which would wipe the ticks that came with it.
+      if (data.dailiesDay) save(DAY_KEY, data.dailiesDay);
+      else remove(DAY_KEY);
+    }
+    if (data.dailiesHour !== null) save(HOUR_KEY, data.dailiesHour);
+    saveLog(data.dailiesLog);
     if (data.settings) save("settings", data.settings);
     saveSessions(data.sessions);
     saveArchive(data.archive);
@@ -256,11 +293,20 @@ export function applyBackup(data, mode) {
       sessions: data.sessions.length,
       archive: data.archive.length,
       planner: data.planner !== null,
+      dailies: data.dailies !== null,
+      dailyDays: data.dailiesLog.length,
     };
   }
 
   const sessions = mergeRecords(loadSessions(), data.sessions, sessionSignature);
   const archive = mergeRecords(loadArchive(), data.archive, archiveSignature);
+  // Days this browser has no record of. A day it *does* have a record of stays
+  // as it is: this browser watched that day end, and the file's copy of it is
+  // no better informed.
+  const existing = loadLog();
+  const days = new Set(existing.map((e) => e.day));
+  const addedDays = data.dailiesLog.filter((e) => !days.has(e.day));
+  saveLog(cleanLog([...existing, ...addedDays]));
 
   saveSessions(sessions.merged.sort((a, b) => b.start - a.start));
   saveArchive(archive.merged.sort((a, b) => b.doneAt - a.doneAt));
@@ -271,6 +317,8 @@ export function applyBackup(data, mode) {
     sessions: sessions.added,
     archive: archive.added,
     planner: false,
+    dailies: false,
+    dailyDays: addedDays.length,
   };
 }
 

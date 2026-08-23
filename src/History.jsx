@@ -6,11 +6,18 @@ import {
   totalSince,
 } from "./sessions";
 import {
+  bestStreak,
+  currentStreak,
+  isComplete,
+  recentDays,
+} from "./dailiesStore";
+import {
   formatDayLabel,
   formatDayTick,
   formatDuration,
   formatTimeOfDay,
   formatWeekTick,
+  dayKeyToTime,
   groupByDay,
   startOfDay,
   startOfWeek,
@@ -195,7 +202,92 @@ function Stats({ sessions }) {
   );
 }
 
-export default function History({ sessions, removeSession, clearSessions }) {
+/**
+ * The dailies streak. Only whole days count: a day is a streak day when there
+ * was something on the list and all of it got ticked before the day rolled over.
+ *
+ * Today is shown but doesn't break anything until it's over — a counter that
+ * read zero every morning would train you to ignore it.
+ */
+function DailiesView({ dailies }) {
+  // `day` rather than a freshly computed key: the panel's ticks are attributed
+  // to the day the rollover last recorded, and moving the rollover hour later
+  // makes the two disagree until the day actually turns.
+  const { log, counts, day } = dailies;
+
+  const { current, best, days } = useMemo(
+    () => ({
+      current: currentStreak(log, day, counts),
+      best: bestStreak(log, day, counts),
+      days: recentDays(log, day, counts, DAYS_SHOWN),
+    }),
+    [log, counts, day]
+  );
+
+  const todayDone = counts.total > 0 && counts.done >= counts.total;
+
+  return (
+    <div className="stats">
+      <div className="stat-tiles">
+        <div className="stat-tile">
+          <span className="stat-value">{current}</span>
+          <span className="stat-label">streak</span>
+          <span className="stat-sub">day{current === 1 ? "" : "s"}</span>
+        </div>
+        <div className="stat-tile">
+          <span className="stat-value">{best}</span>
+          <span className="stat-label">best</span>
+          <span className="stat-sub">day{best === 1 ? "" : "s"}</span>
+        </div>
+        <div className="stat-tile">
+          <span className="stat-value">
+            {counts.done}/{counts.total}
+          </span>
+          <span className="stat-label">today</span>
+          <span className="stat-sub">{todayDone ? "all done" : "so far"}</span>
+        </div>
+      </div>
+
+      <div className="daily-strip" aria-hidden="true">
+        {days.map((entry) => {
+          const state = entry.unknown
+            ? "unknown"
+            : isComplete(entry)
+              ? "complete"
+              : entry.done > 0
+                ? "partial"
+                : "none";
+          return (
+            <span
+              key={entry.day}
+              className={`daily-dot daily-dot-${state}${
+                entry.day === day ? " daily-dot-today" : ""
+              }`}
+              title={`${formatDayTick(dayKeyToTime(entry.day))} — ${
+                entry.unknown ? "nothing recorded" : `${entry.done} / ${entry.total}`
+              }`}
+            />
+          );
+        })}
+      </div>
+
+      <p className="stats-note">
+        Last {DAYS_SHOWN} days. A day counts once everything on the list is
+        ticked; days you never opened pomopomo don't count.
+      </p>
+
+      {counts.total === 0 && (
+        <p className="history-empty">
+          There's nothing on your dailies list yet. Add a line like{" "}
+          <strong>[] make the bed</strong> to it and a streak starts the first
+          day you clear it.
+        </p>
+      )}
+    </div>
+  );
+}
+
+export default function History({ sessions, removeSession, clearSessions, dailies }) {
   const [tab, setTab] = useState("sessions");
   const [confirmClear, setConfirmClear] = useState(false);
 
@@ -226,6 +318,7 @@ export default function History({ sessions, removeSession, clearSessions }) {
             <button
               className="btn btn-ghost"
               onClick={() => setConfirmClear(true)}
+              title="Delete the session log. The dailies streak is left alone."
             >
               clear
             </button>
@@ -243,13 +336,19 @@ export default function History({ sessions, removeSession, clearSessions }) {
           <button aria-pressed={tab === "stats"} onClick={() => setTab("stats")}>
             Stats
           </button>
+          <button
+            aria-pressed={tab === "dailies"}
+            onClick={() => setTab("dailies")}
+          >
+            Dailies
+          </button>
         </div>
 
-        {tab === "sessions" ? (
+        {tab === "sessions" && (
           <SessionList sessions={sessions} removeSession={removeSession} />
-        ) : (
-          <Stats sessions={sessions} />
         )}
+        {tab === "stats" && <Stats sessions={sessions} />}
+        {tab === "dailies" && <DailiesView dailies={dailies} />}
       </div>
     </section>
   );
