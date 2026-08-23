@@ -1,0 +1,43 @@
+/* The things you do every day. Starts small — it's a checklist you glance at,
+   not somewhere you draft — but the height is the user's, same as the planner. */
+
+.dailies-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.dailies-head-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dailies-head-right .panel-count {
+  margin-left: 0;
+}
+
+/* Says what the panel does that the planner doesn't — the only thing about it
+   that isn't self-evident — and opens the setting for it. */
+.dailies-reset {
+  padding: 3px 8px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.dailies-settings {
+  margin: 12px 14px 2px;
+}
+
+.dailies-settings-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-faint);
+}
+
+.dailies-editor {
+  padding: 10px 14px 0;
+  /* Keeps the list visible when the hour panel opens above it. */
+  min-height: 84px;
+}

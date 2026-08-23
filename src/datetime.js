@@ -24,6 +24,12 @@ export function dayKey(ts) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+/** Local midnight for a key produced by `dayKey`. */
+export function dayKeyToTime(key) {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d).getTime();
+}
+
 /**
  * Group records already sorted newest-first into consecutive day buckets.
  * `at` picks the timestamp that decides which day a record belongs to.
@@ -76,6 +82,13 @@ export function formatWeekTick(at) {
   return new Date(at).toLocaleDateString(undefined, {
     day: "numeric",
     month: "short",
+  });
+}
+
+/** An hour of the day on its own: "4 AM", or "04" where the locale is 24-hour. */
+export function formatHour(hour) {
+  return new Date(2000, 0, 1, hour).toLocaleTimeString(undefined, {
+    hour: "numeric",
   });
 }
 

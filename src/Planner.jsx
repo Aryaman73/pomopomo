@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { EditorState } from "@codemirror/state";
-import { EditorView, keymap, placeholder } from "@codemirror/view";
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import Archive from "./Archive";
-import { continueList, livePreview } from "./livePreview";
+import ResizeHandle, { usePanelHeight } from "./ResizeHandle";
 import { countTasks } from "./markdown";
+import { useMarkdownEditor } from "./markdownEditor";
 import {
   addEntries,
   cleanDocument,
@@ -14,7 +12,7 @@ import {
   saveDoneMap,
   syncDoneMap,
 } from "./archiveStore";
-import { load, save } from "./storage";
+import { load } from "./storage";
 import "./Planner.css";
 
 const STARTER = `# Today
@@ -31,31 +29,11 @@ Headings, **bold**, *italic* and \`code\` all work.
 Put your cursor on a line to see the raw markdown behind it.
 `;
 
-const editorTheme = EditorView.theme(
-  {
-    "&": { height: "100%", fontSize: "15px" },
-    "&.cm-focused": { outline: "none" },
-    ".cm-scroller": {
-      fontFamily: "var(--font-mono)",
-      lineHeight: "1.7",
-      padding: "4px 0 40vh",
-    },
-    ".cm-content": { padding: "0", caretColor: "var(--cyan)" },
-    ".cm-line": { padding: "0 4px" },
-    "&.cm-focused .cm-cursor": { borderLeftColor: "var(--cyan)" },
-    "&.cm-focused .cm-selectionBackground, ::selection": {
-      background: "rgba(164, 121, 255, 0.32)",
-    },
-    ".cm-selectionBackground": { background: "rgba(164, 121, 255, 0.18)" },
-    ".cm-placeholder": { color: "var(--text-faint)" },
-  },
-  { dark: true }
-);
+const MIN_HEIGHT = 220;
+const DEFAULT_HEIGHT = 560;
 
 export default function Planner() {
-  const hostRef = useRef(null);
-  const viewRef = useRef(null);
-  const saveTimer = useRef(null);
+  const [height, setHeight] = usePanelHeight("plannerHeight", DEFAULT_HEIGHT, MIN_HEIGHT);
 
   // Completion times for ticked tasks. Kept in a ref rather than state because
   // nothing renders from it directly and it changes on keystrokes.
@@ -66,92 +44,44 @@ export default function Planner() {
   const [view, setView] = useState("planner");
   const [undo, setUndo] = useState(null);
 
-  // Mirrors so the editor's update listener can read current values without
+  // Mirror so the editor's change handler can read the current value without
   // being rebuilt.
   const undoRef = useRef(undo);
   undoRef.current = undo;
 
-  // Set while we rewrite the document ourselves, so the listener can tell our
-  // own clean/undo edits apart from the user typing.
-  const programmatic = useRef(false);
+  const { hostRef, viewRef, rewrite } = useMarkdownEditor({
+    storageKey: "planner",
+    hint: "Start typing. `# heading` for sections, `[] thing` for a task.",
 
-  useEffect(() => {
-    const initial = load("planner", STARTER);
-    // Backfill anything already ticked. `observed: false` is the important part:
-    // we didn't see these happen, so the archive will mark their times as
-    // guesses rather than claiming they were finished the moment the page loaded.
-    doneRef.current = syncDoneMap(initial, doneRef.current, { observed: false });
-    saveDoneMap(doneRef.current);
+    initialDoc: () => {
+      const initial = load("planner", STARTER);
+      // Backfill anything already ticked. `observed: false` is the important
+      // part: we didn't see these happen, so the archive will mark their times
+      // as guesses rather than claiming they were finished the moment the page
+      // loaded.
+      doneRef.current = syncDoneMap(initial, doneRef.current, { observed: false });
+      saveDoneMap(doneRef.current);
+      return initial;
+    },
 
-    const editor = new EditorView({
-      parent: hostRef.current,
-      state: EditorState.create({
-        doc: initial,
-        extensions: [
-          history(),
-          // continueList first so it wins the Enter key.
-          keymap.of([continueList, ...defaultKeymap, ...historyKeymap]),
-          EditorView.lineWrapping,
-          placeholder("Start typing. `# heading` for sections, `[] thing` for a task."),
-          livePreview,
-          editorTheme,
-          EditorView.updateListener.of((update) => {
-            if (!update.docChanged) return;
-            const text = update.state.doc.toString();
-            setCounts(countTasks(text));
+    onChange: (text, { programmatic }) => {
+      setCounts(countTasks(text));
 
-            // This is the whole point of the side-car: the stamp lands when the
-            // box is ticked, not when the planner is later cleaned.
-            const next = syncDoneMap(text, doneRef.current);
-            if (next !== doneRef.current) {
-              doneRef.current = next;
-              saveDoneMap(next);
-            }
+      // This is the whole point of the side-car: the stamp lands when the box
+      // is ticked, not when the planner is later cleaned.
+      const next = syncDoneMap(text, doneRef.current);
+      if (next !== doneRef.current) {
+        doneRef.current = next;
+        saveDoneMap(next);
+      }
 
-            // Any hand edit after a clean invalidates the undo — restoring the
-            // pre-clean text would silently throw that edit away.
-            if (!programmatic.current && undoRef.current) setUndo(null);
-
-            // Debounced; the editor fires this on every keystroke and
-            // localStorage writes are synchronous.
-            clearTimeout(saveTimer.current);
-            saveTimer.current = setTimeout(() => save("planner", text), 400);
-          }),
-        ],
-      }),
-    });
-
-    viewRef.current = editor;
-
-    // A pending debounce would otherwise lose the last few keystrokes when the
-    // tab closes.
-    const flush = () => {
-      clearTimeout(saveTimer.current);
-      save("planner", editor.state.doc.toString());
-    };
-    window.addEventListener("beforeunload", flush);
-    document.addEventListener("visibilitychange", flush);
-
-    return () => {
-      flush();
-      window.removeEventListener("beforeunload", flush);
-      document.removeEventListener("visibilitychange", flush);
-      editor.destroy();
-      viewRef.current = null;
-    };
-  }, []);
+      // Any hand edit after a clean invalidates the undo — restoring the
+      // pre-clean text would silently throw that edit away.
+      if (!programmatic && undoRef.current) setUndo(null);
+    },
+  });
 
   useEffect(() => saveArchive(archive), [archive]);
-
-  /** Replace the whole document without tripping the undo invalidation. */
-  const rewrite = (editor, text) => {
-    programmatic.current = true;
-    editor.dispatch({
-      changes: { from: 0, to: editor.state.doc.length, insert: text },
-      selection: { anchor: 0 },
-    });
-    programmatic.current = false;
-  };
 
   const handleClean = () => {
     const editor = viewRef.current;
@@ -162,7 +92,7 @@ export default function Planner() {
     const result = cleanDocument(before, snapshot);
     if (!result) return;
 
-    rewrite(editor, result.text);
+    rewrite(result.text);
     setArchive((list) => addEntries(list, result.entries));
     setUndo({
       text: before,
@@ -173,15 +103,14 @@ export default function Planner() {
   };
 
   const handleUndo = () => {
-    const editor = viewRef.current;
-    if (!editor || !undo) return;
+    if (!viewRef.current || !undo) return;
 
     // Restore the stamps *before* the text, or the returning `[x]` tasks would
     // look newly ticked and be re-stamped with now.
     doneRef.current = undo.doneSnapshot;
     saveDoneMap(undo.doneSnapshot);
 
-    rewrite(editor, undo.text);
+    rewrite(undo.text);
     setArchive((list) => list.filter((e) => !undo.ids.has(e.id)));
     setUndo(null);
   };
@@ -198,7 +127,7 @@ export default function Planner() {
   };
 
   return (
-    <section className="panel planner-panel">
+    <section className="panel planner-panel" style={{ height }}>
       <div className="panel-head">
         <div
           className="segmented segmented-compact"
@@ -227,7 +156,7 @@ export default function Planner() {
             </button>
           )}
 
-          <span className="planner-count">
+          <span className="panel-count">
             {showPlanner
               ? `${counts.done} / ${counts.total} done`
               : `${archive.length} archived`}
@@ -261,7 +190,7 @@ export default function Planner() {
       {/* The editor stays mounted while the archive is showing — unmounting it
           would throw away undo history and the cursor position. */}
       <div
-        className="planner-editor"
+        className="md-editor planner-editor"
         ref={hostRef}
         style={showPlanner ? undefined : { display: "none" }}
       />
@@ -274,6 +203,13 @@ export default function Planner() {
           }
         />
       )}
+
+      <ResizeHandle
+        height={height}
+        setHeight={setHeight}
+        min={MIN_HEIGHT}
+        label="Resize the planner"
+      />
     </section>
   );
 }

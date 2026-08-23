@@ -262,6 +262,96 @@ truncate the seconds, since the inputs are whole minutes).
 Deliberately not built: editing a session *after* it's logged. That's a
 different feature with a different risk profile, and it's still in the backlog.
 
+## v6 — dailies (shipped)
+
+- [x] A second free-form markdown panel below the planner, the same live-preview
+      editor with the same syntax.
+- [x] No archive and no clean. The only thing that ever happens to it on its own
+      is that the ticks clear when a new day starts.
+- [x] A new day starts at **4am local**, not midnight.
+
+### Why 4am, and why it's settable
+
+Midnight is the wrong boundary for a checklist about a person's day. Work that
+runs to 1am is still tonight, and a list that wipes itself while you're still up
+looks like data loss rather than a fresh start. 4am is late enough that anyone
+awake is having a long night, and early enough to be done before a normal
+morning — but it's a guess about someone else's sleep, so the hour is a setting
+(`resets 4 AM` in the panel header).
+
+The boundary is computed on the local calendar rather than by shifting the
+timestamp, so the two days a year that aren't 24 hours long still roll over at
+the stated hour rather than an hour either side of it.
+
+Days only ever move forwards. Pushing the hour later in the day can put "now"
+back inside a day already closed, and closing it twice would clear ticks made
+since; that day just runs long, once. Which day the ticks on screen belong to is
+read from the stored marker rather than recomputed, so the panel and the streak
+can't disagree while the two are out of step.
+
+### What resets, and what doesn't
+
+Only `[x]` → `[]`, and only on lines that are actually task lines. The text, the
+headings, the order, an unticked `[ ]` — all untouched. The list is a thing you
+wrote; the ticks are today's state of it.
+
+The rollover runs at mount, on a timer set to the next 4am, and on every return
+to the tab — a laptop asleep at 4am fires no timer at all, so the scheduled check
+can't be the only one. All three go through the same function, which no-ops when
+the day hasn't turned.
+
+The day it last reset is stored next to the document and written *before* the
+cleared text. That ordering is the one real hazard: if the new day were recorded
+and the cleared document lost, the next check would see nothing to do and
+yesterday's ticks would stand forever. Both writes are immediate rather than left
+to the editor's save debounce.
+
+### The streak
+
+Closing a day writes down what the list looked like when it ended — `{ day,
+done, total }`, one small record per day, capped at about a year. That log is
+the whole basis of the **Dailies** tab in the history panel: current streak,
+best streak, and a strip of the last 14 days.
+
+Three rules decide what the number means:
+
+1. **A day counts when there was something on the list and all of it got
+   ticked.** An empty list isn't a perfect day.
+2. **An unfinished today doesn't break anything.** The day isn't over. A counter
+   that read zero every morning would train you to ignore it.
+3. **A day pomopomo never saw doesn't count, and doesn't pretend to.** It's
+   absent from the log, which breaks the streak, and the strip draws it dashed
+   rather than as an honest zero — the same principle as `estimated` on archive
+   times and `adjusted` on sessions: mark what was asserted rather than
+   observed.
+
+Still deliberately not built: per-task history, "you've done this 14 times",
+anything that ranks days against each other. The point is the one number.
+
+### Deliberately not built
+
+The planner and the dailies list are now the same editor with different rules
+around them: `markdownEditor.js` owns the live preview, the debounced save and
+the unload flush; archiving and the rollover stay in their components.
+
+## v7 — panels you can size (shipped)
+
+- [x] A drag handle on the bottom edge of the planner and of the dailies list.
+      Both remember their height; both have a floor (220px and 140px) so neither
+      can be dragged into a state you can't drag back out of.
+- [x] Keyboard resizing on the same handle — it's a `separator`, arrow and page
+      keys move it — and a double-click to take it back to its smallest.
+- [x] Neither panel stretches to fill the column any more.
+
+Before this the planner grew to match whatever the timer and history stack next
+to it happened to need, so its height was decided by something with no bearing
+on it — a session finishing, a chart appearing. Content scrolls inside the
+height you chose instead, which is the trade the request asked for.
+
+The editor's bottom padding used to be `40vh`, on the theory that the panel was
+tall. At a hand-set height that's mostly empty scroll, so it's a flat 140px now:
+still enough to lift the line you're typing off the bottom edge.
+
 ## Backlog — everything else discussed, nothing dropped
 
 ### Archive follow-ups
@@ -322,6 +412,8 @@ source set to GitHub Actions, custom domain inherited from
 - v3 — clean planner and archive (2026-07-29)
 - v4 — export and import (2026-07-30)
 - v5 — adjusting a forgotten count-up (2026-08-02)
+- v6 — dailies (2026-08-22)
+- v7 — dailies streak, settable rollover, resizable panels (2026-08-22)
 
 Everything in the original request is shipped, and the data is no longer trapped
 in one browser. What's left is polish: keyboard shortcuts, auto-start, editing a

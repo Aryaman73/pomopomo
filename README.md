@@ -51,12 +51,32 @@ your planner lives in `localStorage` and nowhere else.
   guess.
 - The clean is undoable, until you edit by hand.
 
+**Dailies**
+- A second markdown panel under the planner, for the things you do every day.
+  Same editor, same syntax.
+- No archive, no clean — the only thing that happens to it on its own is that
+  the ticks clear when a new day starts.
+- A new day starts at **4am** by default, not midnight, so a night that runs
+  late doesn't get its list wiped out from under it. Click **resets 4 AM** in
+  the header to move the hour.
+- Only the ticks reset. The list you wrote stays exactly as you left it.
+- **Dailies** in the history panel keeps the streak: consecutive days you
+  cleared the whole list, your best run, and a strip of the last 14 days. An
+  unfinished today doesn't break it — the day isn't over. A day you never
+  opened pomopomo does, and shows as a dashed cell rather than an empty one.
+
+**Sizing**
+- The planner and the dailies list are as tall as you drag them — grab the
+  handle at the bottom edge of either. Arrow keys work too, once it's focused.
+- Neither one resizes itself. Their content scrolls inside whatever height you
+  gave them, and the height is remembered.
+
 **Backups**
-- **export** downloads everything — planner, archive, completion times, session
-  log, timer settings — as a single JSON file.
+- **export** downloads everything — planner, dailies, archive, completion times,
+  session log, timer settings — as a single JSON file.
 - **import** validates the file, shows you what's in it, then asks: **Merge**
   (adds only sessions and archived tasks you don't already have, leaves your
-  planner and settings alone) or **Replace everything**.
+  planner, dailies and settings alone) or **Replace everything**.
 - Live timer state is deliberately not exported. A countdown's deadline is
   meaningless on another machine next week.
 

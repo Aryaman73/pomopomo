@@ -1,11 +1,14 @@
 import Backup from "./Backup";
+import Dailies from "./Dailies";
 import History from "./History";
 import Planner from "./Planner";
 import Timer from "./Timer";
+import { useDailies } from "./useDailies";
 import { useTimer } from "./useTimer";
 
 export default function App() {
   const timer = useTimer();
+  const dailies = useDailies();
 
   return (
     <>
@@ -23,9 +26,13 @@ export default function App() {
               sessions={timer.sessions}
               removeSession={timer.removeSession}
               clearSessions={timer.clearSessions}
+              dailies={dailies}
             />
           </div>
-          <Planner />
+          <div className="column">
+            <Planner />
+            <Dailies dailies={dailies} />
+          </div>
         </main>
       </div>
     </>
