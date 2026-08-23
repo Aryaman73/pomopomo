@@ -314,16 +314,35 @@
   opacity: 0.55;
 }
 
+/* Yellow kept the streak, green cleared the list. Two states rather than a
+   gradient: the strip is answering did-you-turn-up, not by-how-much. */
 .daily-dot-partial {
-  background: rgba(164, 121, 255, 0.45);
-  border-color: var(--violet);
+  background: var(--amber);
+  border-color: var(--amber);
 }
 
 .daily-dot-complete {
-  background: var(--cyan);
-  border-color: var(--cyan);
+  background: var(--green);
+  border-color: var(--green);
 }
 
 .daily-dot-today {
   box-shadow: 0 0 0 2px rgba(255, 94, 219, 0.55);
+}
+
+/* The same two swatches, inline in the note under the strip. */
+.daily-key {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  vertical-align: baseline;
+}
+
+.daily-key-complete {
+  background: var(--green);
+}
+
+.daily-key-partial {
+  background: var(--amber);
 }

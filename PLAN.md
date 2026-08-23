@@ -311,22 +311,30 @@ to the editor's save debounce.
 Closing a day writes down what the list looked like when it ended — `{ day,
 done, total }`, one small record per day, capped at about a year. That log is
 the whole basis of the **Dailies** tab in the history panel: current streak,
-best streak, and a strip of the last 14 days.
+full days, and a strip of the last 14 days.
 
-Three rules decide what the number means:
+Two thresholds, because they answer different questions:
 
-1. **A day counts when there was something on the list and all of it got
-   ticked.** An empty list isn't a perfect day.
-2. **An unfinished today doesn't break anything.** The day isn't over. A counter
+1. **Anything ticked keeps the streak** — yellow in the strip. A streak that
+   snapped over a missed third item would punish exactly the days you most need
+   it to survive, and the honest question a streak asks is whether you turned
+   up.
+2. **The whole list ticked is a full day** — green, and counted on its own. This
+   is the number that means you actually cleared it, so it's a total rather than
+   a run: a count you can only ever add to, which no bad week can take off you.
+
+Two more rules hold either way:
+
+3. **An unfinished today doesn't break anything.** The day isn't over. A counter
    that read zero every morning would train you to ignore it.
-3. **A day pomopomo never saw doesn't count, and doesn't pretend to.** It's
+4. **A day pomopomo never saw doesn't count, and doesn't pretend to.** It's
    absent from the log, which breaks the streak, and the strip draws it dashed
    rather than as an honest zero — the same principle as `estimated` on archive
    times and `adjusted` on sessions: mark what was asserted rather than
    observed.
 
 Still deliberately not built: per-task history, "you've done this 14 times",
-anything that ranks days against each other. The point is the one number.
+anything that ranks days against each other.
 
 ### Deliberately not built
 
@@ -414,6 +422,7 @@ source set to GitHub Actions, custom domain inherited from
 - v5 — adjusting a forgotten count-up (2026-08-02)
 - v6 — dailies (2026-08-22)
 - v7 — dailies streak, settable rollover, resizable panels (2026-08-22)
+- v7.1 — streak counts any tick; full days counted separately (2026-08-22)
 
 Everything in the original request is shipped, and the data is no longer trapped
 in one browser. What's left is polish: keyboard shortcuts, auto-start, editing a

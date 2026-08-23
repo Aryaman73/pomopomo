@@ -173,8 +173,19 @@ export function addDay(list, entry) {
 }
 
 // ── Streaks ──────────────────────────────────────────────────────────────────
+//
+// Two thresholds, because they answer different questions. Keeping the streak
+// asks only that you turned up: one tick is a day you did something, and a
+// streak that snaps for a missed third item punishes the days you most need it
+// to survive. Counting full days asks for the whole list, and is the number
+// that means you actually cleared it.
 
-/** A day counts only if there was something on the list and all of it got done. */
+/** Something on the list got ticked. Enough to keep a streak alive. */
+export function isStarted(entry) {
+  return !!entry && entry.done > 0;
+}
+
+/** Everything on the list got ticked. */
 export function isComplete(entry) {
   return !!entry && entry.total > 0 && entry.done >= entry.total;
 }
@@ -187,42 +198,29 @@ function index(log, todayKey, today) {
 }
 
 /**
- * Consecutive complete days ending now. An unfinished today doesn't break a
- * streak that ran through yesterday: the day isn't over, and a counter that
- * resets to zero every morning would be worse than useless.
+ * Consecutive days ending now on which anything got ticked. A today with
+ * nothing ticked yet doesn't break a streak that ran through yesterday: the day
+ * isn't over, and a counter that resets to zero every morning would be worse
+ * than useless.
  */
 export function currentStreak(log, todayKey, today) {
   const days = index(log, todayKey, today);
   let key = todayKey;
   let count = 0;
 
-  if (isComplete(days.get(key))) count += 1;
+  if (isStarted(days.get(key))) count += 1;
   key = previousDay(key);
 
-  while (isComplete(days.get(key))) {
+  while (isStarted(days.get(key))) {
     count += 1;
     key = previousDay(key);
   }
   return count;
 }
 
-/** The longest run of complete days on record, today included. */
-export function bestStreak(log, todayKey, today) {
-  const days = index(log, todayKey, today);
-  const complete = [...days.values()]
-    .filter(isComplete)
-    .map((e) => e.day)
-    .sort();
-
-  let best = 0;
-  let run = 0;
-  let previous = null;
-  for (const day of complete) {
-    run = previous && previousDay(day) === previous ? run + 1 : 1;
-    best = Math.max(best, run);
-    previous = day;
-  }
-  return best;
+/** Every day on record where the whole list got ticked, today included. */
+export function fullDays(log, todayKey, today) {
+  return [...index(log, todayKey, today).values()].filter(isComplete).length;
 }
 
 /** The last `count` days, oldest first, for the strip in the history panel. */
