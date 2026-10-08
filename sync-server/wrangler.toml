@@ -1,0 +1,19 @@
+# The pomopomo sync server. `npm run deploy` from this folder, once you've run
+# `npx wrangler login`. See README.md here for the whole setup.
+name = "pomopomo-sync"
+main = "src/index.js"
+compatibility_date = "2025-06-01"
+
+# One Durable Object per vault. SQLite-backed, which is what the free plan runs.
+[[durable_objects.bindings]]
+name = "VAULT"
+class_name = "Vault"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Vault"]
+
+[vars]
+# Pages allowed to talk to this server, comma-separated. Add your own domain if
+# you host pomopomo somewhere else; "*" allows any.
+ALLOWED_ORIGINS = "https://aryamans.me,http://localhost:5173,http://localhost:4173,http://127.0.0.1:5173"

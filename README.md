@@ -3,8 +3,10 @@
 A pomodoro timer and a markdown planner, side by side.
 **→ [aryamans.me/pomopomo](https://aryamans.me/pomopomo/)**
 
-Everything runs in your browser. No account, no server, nothing sent anywhere —
-your planner lives in `localStorage` and nowhere else.
+Everything runs in your browser. No account, and nothing sent anywhere — your
+planner lives in `localStorage` and nowhere else. Unless you turn on **sync**,
+which keeps your devices in step through a tiny server that only ever sees
+encrypted data.
 
 ## What it does
 
@@ -83,6 +85,23 @@ your planner lives in `localStorage` and nowhere else.
 - Live timer state is deliberately not exported. A countdown's deadline is
   meaningless on another machine next week.
 
+**Sync**
+- Off by default. **sync** in the header turns it on, and gives you a link to
+  open on your phone or other laptop — or a 25-character code to type in.
+- Carries the planner, dailies, session log, archive, completion times and
+  timer settings. A running timer stays on the device it's running on.
+- End-to-end encrypted. The code never leaves your devices; the key and the
+  server's id for your data are both derived from it, and the server can't get
+  from one to the other.
+- Syncs before the page first draws, shortly after any change, on returning to
+  the tab, and once a minute while it's open.
+- Real merging, not last-write-wins: tick different dailies on two devices
+  offline, add tasks on both, delete a session on one, and all of it lands.
+  When the same lines were changed on both, the most recent edit wins and the
+  other version is kept under **saved copies** in the sync panel.
+- Another device's change never reloads the page out from under your typing —
+  it waits until you pause.
+
 ## Running it
 
 ```bash
@@ -98,12 +117,17 @@ publishes to GitHub Pages. Because `aryaman73.github.io` carries the CNAME
 `aryamans.me`, this project repo is served at `aryamans.me/pomopomo/` with no
 extra DNS setup.
 
+Sync needs a server: a Cloudflare Worker in `sync-server/`, free to run. Setup
+is in [sync-server/README.md](sync-server/README.md) — deploy it once, then set
+its URL as the repo's `SYNC_URL` Actions variable.
+
 Vite is configured with `base: "./"`, so the same build also works at a domain
 root or any other sub-path.
 
 ## Stack
 
 Vite + React 18, and CodeMirror 6 for the planner. Six runtime dependencies,
-deliberately.
+deliberately — sync added none: the crypto and compression are the
+browser's own APIs, and the diff3 merge is written here.
 
 See [PLAN.md](PLAN.md) for scope, design notes, and the feature backlog.

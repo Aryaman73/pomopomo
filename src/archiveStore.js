@@ -19,7 +19,7 @@ const DONE_KEY = "done";
 
 // Well beyond any realistic use, but the archive is append-mostly so it needs
 // some ceiling.
-const MAX_ARCHIVE = 5000;
+export const MAX_ARCHIVE = 5000;
 
 /**
  * Identity for the completion side-car. Two identically worded tasks under the

@@ -27,6 +27,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+        env:
+          # The sync server's URL, from the repo's Actions variables. Unset, the
+          # site still builds; the sync panel just asks for a server instead.
+          VITE_SYNC_URL: ${{ vars.SYNC_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
