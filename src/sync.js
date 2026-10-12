@@ -131,7 +131,12 @@ export function clearNotice() {
 export function loadConfig() {
   const raw = load(CONFIG_KEY, null);
   const code = parseCode(raw?.code);
-  return code ? { code, server: cleanServer(raw.server) } : null;
+  if (!code) return null;
+  return {
+    code,
+    server: cleanServer(raw.server),
+    access: typeof raw.access === "string" ? raw.access.trim() : "",
+  };
 }
 
 function saveConfig(config) {
@@ -144,13 +149,18 @@ function loadBase() {
   return raw;
 }
 
-/** The link that sets up another device: the code rides in the hash, which browsers never send to a server. */
+/**
+ * The link that sets up another device. The code and the server's access key
+ * ride in the hash, which browsers never send to any server — including the
+ * one hosting the page.
+ */
 export function syncLink(config) {
   const server =
     config.server && config.server !== DEFAULT_SERVER
       ? `&server=${encodeURIComponent(config.server)}`
       : "";
-  return `${location.origin}${location.pathname}#sync=${formatCode(config.code)}${server}`;
+  const access = config.access ? `&key=${encodeURIComponent(config.access)}` : "";
+  return `${location.origin}${location.pathname}#sync=${formatCode(config.code)}${access}${server}`;
 }
 
 // ── Snapshots ────────────────────────────────────────────────────────────────
@@ -251,7 +261,12 @@ async function call(config, vault, method, body) {
   try {
     res = await fetch(`${config.server}/v1/vault/${vault.id}`, {
       method,
-      headers: body ? { "Content-Type": "application/json" } : undefined,
+      headers: {
+        ...(body ? { "Content-Type": "application/json" } : {}),
+        // The server's gate, so only your devices can store anything on it.
+        // Separate from the sync code, which the server never sees.
+        ...(config.access ? { Authorization: `Bearer ${config.access}` } : {}),
+      },
       body: body ? JSON.stringify(body) : undefined,
       cache: "no-store",
     });
@@ -259,6 +274,12 @@ async function call(config, vault, method, body) {
     throw new SyncError("offline", "Can't reach the sync server.");
   }
 
+  if (res.status === 401) {
+    throw new SyncError(
+      "denied",
+      "The sync server turned this device away: the access key is missing or wrong."
+    );
+  }
   if (method === "GET" && res.status === 404) return null;
   let json = null;
   try {
@@ -307,7 +328,9 @@ let lastRun = 0;
 
 // Apply whatever the moment: the page is loading, you asked for it, or you've
 // just switched away from it.
-const ALWAYS = new Set(["boot", "manual", "join", "hidden"]);
+const ALWAYS = new Set(["boot", "manual", "start", "join", "hidden"]);
+// Turning sync on or joining. A failure here undoes the setup.
+const SETUP = new Set(["start", "join"]);
 // You've just come back to the tab, so seeing current data straight away beats
 // being shown the old and having it swapped. Unless the return *was* a click or
 // a keypress — that's you starting to do something, and a reload would eat it.
@@ -441,6 +464,12 @@ async function runOnce(trigger) {
   } catch (e) {
     if (e instanceof SyncError && e.kind === "offline") {
       setStatus({ state: "offline", error: null });
+    } else if (e instanceof SyncError && e.kind === "denied" && SETUP.has(trigger)) {
+      // A wrong key while setting up: back to off, with the reason, so the form
+      // is there to try again rather than a device stuck half-configured.
+      remove(CONFIG_KEY);
+      remove(BASE_KEY);
+      setStatus({ state: "off", error: e.message });
     } else {
       setStatus({
         state: "error",
@@ -482,20 +511,23 @@ export function syncNow(trigger = "manual") {
 // ── Turning it on and off ────────────────────────────────────────────────────
 
 /** Start a new vault from this device's data. */
-export function turnOn(server) {
-  saveConfig({ code: parseCode(newCode()), server: cleanServer(server) });
+export function turnOn(server, access) {
+  saveConfig({
+    code: parseCode(newCode()),
+    server: cleanServer(server),
+    access: String(access || "").trim(),
+  });
   remove(BASE_KEY);
-  return syncNow("manual");
+  return syncNow("start");
 }
 
 /** Join a vault another device started. Returns false if the code isn't one. */
-export function join(input, server) {
+export function join(input, server, access) {
   const code = parseCode(input);
   if (!code) return false;
-  if (loadConfig()?.code !== code) {
-    saveConfig({ code, server: cleanServer(server) });
-    remove(BASE_KEY);
-  }
+  const current = loadConfig();
+  if (current?.code !== code) remove(BASE_KEY);
+  saveConfig({ code, server: cleanServer(server), access: String(access || "").trim() });
   syncNow("join");
   return true;
 }
@@ -519,12 +551,14 @@ function takeLink() {
   if (!code) return;
 
   const current = loadConfig();
-  if (current?.code === code) return;
+  const access = (params.get("key") ?? current?.access ?? "").trim();
+  if (current?.code === code && current.access === access) return;
+  if (current?.code !== code) remove(BASE_KEY);
   saveConfig({
     code,
     server: cleanServer(params.get("server")) || current?.server || DEFAULT_SERVER,
+    access,
   });
-  remove(BASE_KEY);
   return true;
 }
 

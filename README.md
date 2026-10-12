@@ -88,6 +88,8 @@ encrypted data.
 **Sync**
 - Off by default. **sync** in the header turns it on, and gives you a link to
   open on your phone or other laptop — or a 25-character code to type in.
+- The server only serves whoever knows its access key, so a public URL doesn't
+  make it a public service. The link carries the key; you type it once.
 - Carries the planner, dailies, session log, archive, completion times and
   timer settings. A running timer stays on the device it's running on.
 - End-to-end encrypted. The code never leaves your devices; the key and the
@@ -118,8 +120,8 @@ publishes to GitHub Pages. Because `aryaman73.github.io` carries the CNAME
 extra DNS setup.
 
 Sync needs a server: a Cloudflare Worker in `sync-server/`, free to run. Setup
-is in [sync-server/README.md](sync-server/README.md) — deploy it once, then set
-its URL as the repo's `SYNC_URL` Actions variable.
+is in [sync-server/README.md](sync-server/README.md) — set an access key and
+deploy it once, then set its URL as the repo's `SYNC_URL` Actions variable.
 
 Vite is configured with `base: "./"`, so the same build also works at a domain
 root or any other sub-path.

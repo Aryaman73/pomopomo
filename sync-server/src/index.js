@@ -10,6 +10,11 @@
 // other — the second one is refused, handed the current data, and merges.
 // Each vault is its own Durable Object, which runs one request at a time, so
 // that check-then-write can't interleave.
+//
+// The server's own URL ends up in the public site, so it also has a gate: an
+// access key, set as the ACCESS_KEY secret, that every request must carry.
+// That decides who can *store* anything here. It has nothing to do with who
+// can *read* a vault — that's the sync code, which never reaches the server.
 
 import { DurableObject } from "cloudflare:workers";
 
@@ -34,6 +39,16 @@ export class Vault extends DurableObject {
   }
 }
 
+const encoder = new TextEncoder();
+
+/** Compare the presented key with ACCESS_KEY without leaking how much matched. */
+async function keyMatches(presented, expected) {
+  const [a, b] = await Promise.all(
+    [presented, expected].map((k) => crypto.subtle.digest("SHA-256", encoder.encode(k)))
+  );
+  return crypto.subtle.timingSafeEqual(a, b);
+}
+
 function allowedOrigin(origin, env) {
   const allowed = String(env.ALLOWED_ORIGINS || "")
     .split(",")
@@ -52,7 +67,7 @@ function respond(body, status, origin) {
   if (origin) {
     headers["Access-Control-Allow-Origin"] = origin;
     headers["Access-Control-Allow-Methods"] = "GET, PUT, OPTIONS";
-    headers["Access-Control-Allow-Headers"] = "Content-Type";
+    headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
     headers["Access-Control-Max-Age"] = "86400";
   }
   return new Response(body === null ? null : JSON.stringify(body), { status, headers });
@@ -67,6 +82,17 @@ export default {
     if (requestOrigin && !origin) return respond({ error: "origin not allowed" }, 403, null);
 
     if (request.method === "OPTIONS") return respond(null, 204, origin);
+
+    // Closed until a key is set: a missing secret should fail loudly, not leave
+    // the server open to anyone who finds its URL.
+    if (!env.ACCESS_KEY) {
+      return respond({ error: "the server has no ACCESS_KEY set" }, 503, origin);
+    }
+    const auth = request.headers.get("Authorization") || "";
+    const presented = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+    if (!(await keyMatches(presented, env.ACCESS_KEY))) {
+      return respond({ error: "wrong or missing access key" }, 401, origin);
+    }
 
     const match = VAULT_PATH.exec(new URL(request.url).pathname);
     if (!match) return respond({ error: "not found" }, 404, origin);

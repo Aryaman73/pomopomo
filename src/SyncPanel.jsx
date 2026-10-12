@@ -143,6 +143,7 @@ function Conflicts({ conflicts, onDismiss }) {
 function Off({ status }) {
   const [server, setServer] = useState(DEFAULT_SERVER);
   const [code, setCode] = useState("");
+  const [access, setAccess] = useState("");
   const [error, setError] = useState(null);
   const shown = error || status.error;
 
@@ -172,13 +173,30 @@ function Off({ status }) {
         </label>
       )}
 
+      <label className="sync-field">
+        <span>Access key</span>
+        <input
+          type="password"
+          value={access}
+          onChange={(e) => setAccess(e.target.value)}
+          placeholder="the sync server's access key"
+          spellCheck={false}
+          autoCapitalize="off"
+          autoComplete="off"
+        />
+        <em>
+          Whoever runs the sync server sets this, so only their devices can use
+          it. Not needed if you're opening a sync link.
+        </em>
+      </label>
+
       <div className="sync-choice">
         <button
           className="btn btn-primary"
           disabled={!serverOk}
           onClick={() => {
             setError(null);
-            turnOn(server);
+            turnOn(server, access);
           }}
         >
           Turn on sync
@@ -194,7 +212,7 @@ function Off({ status }) {
         onSubmit={(e) => {
           e.preventDefault();
           setError(null);
-          if (!join(code, server)) {
+          if (!join(code, server, access)) {
             setError("That isn't a sync code. It's 25 letters and numbers, like abcde-fghjk-….");
           }
         }}
@@ -259,11 +277,23 @@ function On({ status, config, conflicts, onDismiss }) {
             {showCode ? "hide code" : "show code"}
           </button>
         </div>
-        {showCode && <p className="sync-code">{formatCode(config.code)}</p>}
+        {showCode && (
+          <dl className="sync-code">
+            <dt>code</dt>
+            <dd>{formatCode(config.code)}</dd>
+            {config.access && (
+              <>
+                <dt>access key</dt>
+                <dd>{config.access}</dd>
+              </>
+            )}
+          </dl>
+        )}
         <p className="backup-explain">
           Open the link on your phone or other laptop — send it to yourself, or
-          type the code into its sync panel. Anyone with the link or code can
-          read and change your pomopomo, so treat it like a password.
+          type the code and access key into its sync panel. Anyone with the
+          link or code can read and change your pomopomo, so treat it like a
+          password.
         </p>
       </div>
 

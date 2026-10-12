@@ -374,6 +374,12 @@ still enough to lift the line you're typing off the bottom edge.
       deletion is a deletion rather than something the other device brings back.
 - [x] Clashes keep both: the most recent edit wins, the other is a **saved
       copy** in the sync panel, synced everywhere until you dismiss it.
+- [x] An access key (the Worker's `ACCESS_KEY` secret) on every request. The
+      server's URL is in the public bundle, and without a gate every visitor who
+      turned on sync would be storing data on my Cloudflare account. The key
+      decides who can *use* the server; the sync code still decides who can
+      *read* a vault, and the server never sees that. Fails closed: no secret
+      set, no service.
 
 ### Why this shape
 

@@ -126,6 +126,13 @@
   max-width: 460px;
 }
 
+.sync-field em {
+  font-style: normal;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
 .sync-join input,
 .sync-field input {
   flex: 1;
@@ -135,6 +142,9 @@
 }
 
 .sync-code {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
   margin: 0;
   padding: 8px 12px;
   border: 1px solid var(--line);
@@ -144,8 +154,21 @@
   font-size: 14px;
   letter-spacing: 0.06em;
   color: var(--cyan);
-  user-select: all;
   overflow-wrap: anywhere;
+}
+
+.sync-code dt {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  align-self: center;
+}
+
+.sync-code dd {
+  margin: 0;
+  user-select: all;
 }
 
 .sync-conflicts {

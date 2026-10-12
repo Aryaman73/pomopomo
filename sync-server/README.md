@@ -17,8 +17,17 @@ You need a Cloudflare account (free) and Node 20+.
 cd sync-server
 npm install
 npx wrangler login
+npx wrangler secret put ACCESS_KEY
 npm run deploy
 ```
+
+`secret put` asks for the **access key**: whatever you like, as long as you
+remember it. Every request has to carry it, so nobody else can store data on
+your server even though its URL is in the public site. The server refuses
+everything until it's set. It's separate from the sync code — the server sees
+the access key, never the code — so it controls who can use the server, not
+who can read your data. Sync links carry it, so you only ever type it once,
+when you first turn sync on.
 
 `deploy` prints the server's URL — something like
 `https://pomopomo-sync.<your-subdomain>.workers.dev`.
@@ -42,6 +51,7 @@ from somewhere else, then deploy again.
 ## Running it locally
 
 ```bash
+printf 'ACCESS_KEY=any-local-key\n' > .dev.vars   # gitignored
 npm run dev            # http://127.0.0.1:8787
 ```
 
@@ -49,6 +59,8 @@ and point the app at it with a gitignored `.env.development.local` in the repo
 root containing `VITE_SYNC_URL=http://127.0.0.1:8787`.
 
 ## API
+
+Every request needs `Authorization: Bearer <ACCESS_KEY>`, or gets `401`.
 
 | Request | Response |
 | --- | --- |
@@ -59,9 +71,13 @@ root containing `VITE_SYNC_URL=http://127.0.0.1:8787`.
 
 ## What it can and can't see
 
-It sees the vault id, the size of the encrypted data, when it changes, and the
-IP addresses of the requests. It never sees the sync code or the key, which
-never leave your devices, so it can't decrypt anything.
+It sees the access key, the vault id, the size of the encrypted data, when it
+changes, and the IP addresses of the requests. It never sees the sync code or
+the encryption key, which never leave your devices, so it can't decrypt
+anything.
 
-The URL ends up in the public site bundle, so anyone could store blobs of
-their own on it. They can't read or touch yours without your sync code.
+The URL ends up in the public site bundle, which is what the access key is for.
+Someone who guessed it could store blobs of their own here, but still couldn't
+read or touch yours without your sync code. A long key makes guessing
+pointless; change it any time with `wrangler secret put ACCESS_KEY`, then reopen
+a sync panel on each device and join again with the new key.
