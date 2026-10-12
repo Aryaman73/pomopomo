@@ -86,8 +86,12 @@ encrypted data.
   meaningless on another machine next week.
 
 **Sync**
-- Off by default. **sync** in the header turns it on, and gives you a link to
-  open on your phone or other laptop — or a 25-character code to type in.
+- Off by default. **sync settings** in the header turns it on: enter the
+  access key and **Create a new code** on the first device, then on each other
+  device enter the key and that code and press **Sync with this code** — or
+  just open the link the first device gives you.
+- While it's on, a **synced** button sits next to it: a dot for the state
+  (green synced, amber waiting, pink failed), and a click to sync right now.
 - The server only serves whoever knows its access key, so a public URL doesn't
   make it a public service. The link carries the key; you type it once.
 - Carries the planner, dailies, session log, archive, completion times and

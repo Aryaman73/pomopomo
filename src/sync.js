@@ -449,11 +449,13 @@ async function runOnce(trigger) {
           reloadWith({ copies, joined: trigger === "join" });
           return;
         }
-        if (copies || trigger === "join") {
-          setStatus({ notice: { copies, joined: trigger === "join" } });
-        }
       } else {
         save(BASE_KEY, { rev, snapshot: merged, at: Date.now() });
+      }
+      // No reload to carry the news, so say it here. Joining always gets a
+      // word, even when there was nothing to merge, so it's clear it worked.
+      if (copies || trigger === "join") {
+        setStatus({ notice: { copies, joined: trigger === "join" } });
       }
 
       setStatus({ state: "synced", lastSynced: Date.now(), error: null });

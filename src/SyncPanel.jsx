@@ -37,51 +37,52 @@ function useNow(every) {
   return now;
 }
 
-function StatusLine({ status, now }) {
-  const since = status.lastSynced ? ` · last synced ${ago(status.lastSynced, now)}` : "";
-  switch (status.state) {
-    case "syncing":
-      return <p className="sync-status">Syncing…</p>;
-    case "synced":
-      return <p className="sync-status sync-ok">Synced {ago(status.lastSynced, now)}</p>;
-    case "behind":
-      return (
-        <p className="sync-status sync-warn">
-          Another device changed things. They'll appear when you pause typing —{" "}
-          <button className="sync-inline" onClick={() => syncNow("manual")}>
-            update now
-          </button>
-          .
-        </p>
-      );
-    case "offline":
-      return (
-        <p className="sync-status">
-          Offline. Changes stay here and sync once you're back{since}.
-        </p>
-      );
-    case "error":
-      return <p className="backup-error">{status.error}</p>;
-    default:
-      return null;
-  }
+// ── The header button ────────────────────────────────────────────────────────
+//
+// Only there while sync is on. It's both the status and the way to sync now:
+// the label says where things stand, and clicking it syncs. When another
+// device's changes are waiting, that click is what applies them.
+
+const BUTTON = {
+  synced: { dot: "ok", label: "synced" },
+  syncing: { dot: "busy", label: "syncing…" },
+  behind: { dot: "warn", label: "update" },
+  offline: { dot: "idle", label: "offline" },
+  error: { dot: "bad", label: "sync failed" },
+};
+
+function SyncButton({ status }) {
+  const now = useNow(30_000);
+  const look = BUTTON[status.state] || BUTTON.syncing;
+
+  let title = "Sync now";
+  if (status.state === "behind") title = "Another device changed things — click to show them";
+  else if (status.state === "error") title = `${status.error} Click to try again.`;
+  else if (status.lastSynced) title = `Last synced ${ago(status.lastSynced, now)} — click to sync now`;
+
+  return (
+    <button
+      className="btn btn-ghost sync-button"
+      onClick={() => syncNow("manual")}
+      disabled={status.state === "syncing"}
+      title={title}
+    >
+      <span className={`sync-dot sync-dot-${look.dot}`} aria-hidden="true" />
+      {look.label}
+    </button>
+  );
 }
+
+// ── Panel pieces ─────────────────────────────────────────────────────────────
 
 function Notice({ notice }) {
   if (!notice) return null;
-  const parts = [];
-  if (notice.joined) {
-    parts.push(
-      "This device joined sync. Its planner and dailies now match your other devices; its sessions and archive were added to theirs."
-    );
-  } else {
-    parts.push("Updated with changes from another device.");
-  }
+  const parts = [notice.joined ? "This device is now syncing." : "Updated with changes from another device."];
   if (notice.copies) {
     parts.push(
       notice.copies === 1
-        ? "One document had been changed in two places at once — the version that didn't win is saved below."
-        : `${notice.copies} documents had been changed in two places at once — the versions that didn't win are saved below.`
+        ? "One document had been changed on two devices at once — the other version is saved below."
+        : `${notice.copies} documents had been changed on two devices at once — the other versions are saved below.`
     );
   }
   return (
@@ -111,9 +112,9 @@ function Conflicts({ conflicts, onDismiss }) {
     <div className="sync-conflicts">
       <p className="sync-heading">Saved copies</p>
       <p className="backup-explain">
-        When the same lines were changed on two devices before they could sync,
-        one version won and the other was kept here. Copy back anything you
-        need, then dismiss it.
+        The same lines were changed on two devices before they could sync. One
+        version won; the other is here. Copy back anything you need, then
+        dismiss it.
       </p>
       <ul>
         {conflicts.map((c) => (
@@ -140,103 +141,96 @@ function Conflicts({ conflicts, onDismiss }) {
   );
 }
 
-function Off({ status }) {
-  const [server, setServer] = useState(DEFAULT_SERVER);
-  const [code, setCode] = useState("");
-  const [access, setAccess] = useState("");
+// ── Sync off: two fields, two buttons ────────────────────────────────────────
+
+function Setup({ status, form, setForm }) {
   const [error, setError] = useState(null);
   const shown = error || status.error;
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
-  const needsServer = !DEFAULT_SERVER;
-  const serverOk = /^https?:\/\/\S+/.test(server.trim());
+  const serverOk = /^https?:\/\/\S+/.test(form.server.trim());
+  const busy = status.state === "syncing";
 
   return (
     <>
       <p className="backup-note">
-        <strong>Sync</strong> keeps the planner, dailies, session history,
-        archive and timer settings the same on your phone and laptops. It's
-        encrypted in this browser before it leaves: the server holds scrambled
-        bytes, and the key never leaves your devices.
+        Keep pomopomo the same on your phone and laptops. Everything is
+        encrypted on this device before it's sent.
       </p>
 
-      {needsServer && (
-        <label className="sync-field">
-          <span>Sync server</span>
-          <input
-            type="text"
-            value={server}
-            onChange={(e) => setServer(e.target.value)}
-            placeholder="https://pomopomo-sync.you.workers.dev"
-            spellCheck={false}
-            autoCapitalize="off"
-          />
-        </label>
-      )}
-
-      <label className="sync-field">
-        <span>Access key</span>
-        <input
-          type="password"
-          value={access}
-          onChange={(e) => setAccess(e.target.value)}
-          placeholder="the sync server's access key"
-          spellCheck={false}
-          autoCapitalize="off"
-          autoComplete="off"
-        />
-        <em>
-          Whoever runs the sync server sets this, so only their devices can use
-          it. Not needed if you're opening a sync link.
-        </em>
-      </label>
-
-      <div className="sync-choice">
-        <button
-          className="btn btn-primary"
-          disabled={!serverOk}
-          onClick={() => {
-            setError(null);
-            turnOn(server, access);
-          }}
-        >
-          Turn on sync
-        </button>
-        <p className="backup-explain">
-          Start on the device whose planner you want to keep. You'll get a link
-          to open on your other devices.
-        </p>
-      </div>
-
       <form
-        className="sync-choice"
+        className="sync-form"
         onSubmit={(e) => {
           e.preventDefault();
           setError(null);
-          if (!join(code, server, access)) {
+          if (!join(form.code, form.server, form.access)) {
             setError("That isn't a sync code. It's 25 letters and numbers, like abcde-fghjk-….");
           }
         }}
       >
-        <p className="sync-heading">Already syncing on another device?</p>
-        <div className="sync-join">
+        {!DEFAULT_SERVER && (
+          <label className="sync-field">
+            <span>Sync server</span>
+            <input
+              type="text"
+              value={form.server}
+              onChange={set("server")}
+              placeholder="https://pomopomo-sync.you.workers.dev"
+              spellCheck={false}
+              autoCapitalize="off"
+            />
+          </label>
+        )}
+
+        <label className="sync-field">
+          <span>Access key</span>
           <input
-            type="text"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="sync code"
-            aria-label="Sync code from your other device"
+            type="password"
+            value={form.access}
+            onChange={set("access")}
             spellCheck={false}
             autoCapitalize="off"
             autoComplete="off"
           />
-          <button className="btn" type="submit" disabled={!code.trim() || !serverOk}>
-            Join
+        </label>
+
+        <label className="sync-field">
+          <span>Sync code</span>
+          <input
+            type="text"
+            value={form.code}
+            onChange={set("code")}
+            placeholder="from your other device"
+            spellCheck={false}
+            autoCapitalize="off"
+            autoComplete="off"
+          />
+        </label>
+
+        <div className="sync-buttons">
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={busy || !serverOk || !form.access.trim() || !form.code.trim()}
+          >
+            Sync with this code
+          </button>
+          <button
+            className="btn"
+            type="button"
+            disabled={busy || !serverOk || !form.access.trim()}
+            onClick={() => {
+              setError(null);
+              turnOn(form.server, form.access);
+            }}
+          >
+            Create a new code
           </button>
         </div>
+
         <p className="backup-explain">
-          Or just open the sync link from that device. Joining replaces this
-          device's planner and dailies with the synced ones (keeping a copy of
-          what was here) and adds its sessions and archive to the rest.
+          Already syncing somewhere else? Enter that device's code. Setting up
+          your first device? Leave the code empty and create one.
         </p>
       </form>
 
@@ -245,112 +239,95 @@ function Off({ status }) {
   );
 }
 
-function On({ status, config, conflicts, onDismiss }) {
-  const now = useNow(30_000);
+// ── Sync on: what to type on the next device ─────────────────────────────────
+
+function Settings({ status, config, conflicts, onDismiss }) {
   const [copied, setCopied] = useState(false);
-  const [showCode, setShowCode] = useState(false);
+  const [showKey, setShowKey] = useState(false);
   const [confirmOff, setConfirmOff] = useState(false);
-  const link = syncLink(config);
 
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(link);
+      await navigator.clipboard.writeText(syncLink(config));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      setShowCode(true);
+      setCopied(false);
     }
   };
 
   return (
     <>
-      <StatusLine status={status} now={now} />
       <Notice notice={status.notice} />
+      {status.state === "error" && <p className="backup-error">{status.error}</p>}
 
-      <div className="sync-choice">
-        <p className="sync-heading">Add another device</p>
-        <div className="backup-choices">
-          <button className="btn" onClick={copyLink}>
-            {copied ? "Copied" : "Copy sync link"}
-          </button>
-          <button className="btn btn-ghost" onClick={() => setShowCode((s) => !s)}>
-            {showCode ? "hide code" : "show code"}
-          </button>
-        </div>
-        {showCode && (
-          <dl className="sync-code">
-            <dt>code</dt>
-            <dd>{formatCode(config.code)}</dd>
-            {config.access && (
-              <>
-                <dt>access key</dt>
-                <dd>{config.access}</dd>
-              </>
-            )}
-          </dl>
-        )}
+      <div className="sync-form">
+        <p className="sync-heading">To add another device</p>
+        <dl className="sync-code">
+          <dt>Access key</dt>
+          <dd>
+            {showKey ? config.access || "none" : "••••••••"}{" "}
+            <button className="sync-inline" onClick={() => setShowKey((s) => !s)}>
+              {showKey ? "hide" : "show"}
+            </button>
+          </dd>
+          <dt>Sync code</dt>
+          <dd className="sync-code-value">{formatCode(config.code)}</dd>
+        </dl>
         <p className="backup-explain">
-          Open the link on your phone or other laptop — send it to yourself, or
-          type the code and access key into its sync panel. Anyone with the
-          link or code can read and change your pomopomo, so treat it like a
-          password.
+          Type these into sync settings there and press <strong>Sync with this
+          code</strong> — or copy the link and open it there, which does both.
+          Anyone with the code can read your pomopomo, so keep it to yourself.
         </p>
+        <button className="btn" onClick={copyLink}>
+          {copied ? "Copied" : "Copy link"}
+        </button>
       </div>
 
       <Conflicts conflicts={conflicts} onDismiss={onDismiss} />
 
-      <div className="backup-choices">
-        <button
-          className="btn btn-ghost"
-          onClick={() => syncNow("manual")}
-          disabled={status.state === "syncing"}
-        >
-          sync now
-        </button>
+      <div className="sync-off">
         {confirmOff ? (
           <>
-            <button
-              className="btn backup-danger"
-              onClick={() => {
-                turnOff();
-                setConfirmOff(false);
-              }}
-            >
-              Turn off here
-            </button>
-            <button className="btn btn-ghost" onClick={() => setConfirmOff(false)}>
-              keep syncing
-            </button>
+            <p className="backup-explain">
+              This device keeps its data and stops syncing; your other devices
+              carry on. Note the code first if this is the only place you have it.
+            </p>
+            <div className="sync-buttons">
+              <button
+                className="btn backup-danger"
+                onClick={() => {
+                  turnOff();
+                  setConfirmOff(false);
+                }}
+              >
+                Stop syncing here
+              </button>
+              <button className="btn btn-ghost" onClick={() => setConfirmOff(false)}>
+                cancel
+              </button>
+            </div>
           </>
         ) : (
           <button className="btn btn-ghost" onClick={() => setConfirmOff(true)}>
-            turn off on this device
+            stop syncing on this device
           </button>
         )}
       </div>
-      {confirmOff && (
-        <p className="backup-explain">
-          This device keeps its data and stops syncing. Your other devices carry
-          on. Copy the link first if this is the only place you have it.
-        </p>
-      )}
     </>
   );
 }
 
-const DOT = {
-  synced: "ok",
-  syncing: "busy",
-  behind: "warn",
-  offline: "idle",
-  error: "bad",
-};
+// ── Header ───────────────────────────────────────────────────────────────────
 
 export default function SyncPanel() {
   const status = useSyncExternalStore(subscribe, getStatus);
   const config = loadConfig();
   const [open, setOpen] = useState(false);
   const [conflicts, setConflicts] = useState(loadConflicts);
+  // Up here so what you've typed survives a failed attempt, which briefly
+  // switches the panel over to the "on" view and back.
+  const [form, setForm] = useState({ server: DEFAULT_SERVER, access: "", code: "" });
 
   // Open by itself only for things worth stopping for: just joined, or a clash
   // left a copy behind. A plain update from another device just updates.
@@ -358,11 +335,10 @@ export default function SyncPanel() {
     if (status.notice && (status.notice.joined || status.notice.copies)) setOpen(true);
   }, [status.notice]);
 
-  const dot = config ? DOT[status.state] : null;
-
   return (
     <div className="sync">
       <div className="sync-actions">
+        {config && <SyncButton status={status} />}
         <button
           className="btn btn-ghost"
           onClick={() => {
@@ -370,10 +346,8 @@ export default function SyncPanel() {
             setConflicts(loadConflicts());
           }}
           aria-expanded={open}
-          title={config ? `Sync: ${status.state}` : "Sync between your devices"}
         >
-          {dot && <span className={`sync-dot sync-dot-${dot}`} aria-hidden="true" />}
-          {open ? "close" : "sync"}
+          {open ? "close" : "sync settings"}
           {conflicts.length > 0 && !open && ` (${conflicts.length})`}
         </button>
       </div>
@@ -382,7 +356,7 @@ export default function SyncPanel() {
         <div className="panel backup-panel">
           <div className="panel-body">
             {config ? (
-              <On
+              <Settings
                 status={status}
                 config={config}
                 conflicts={conflicts}
@@ -392,7 +366,7 @@ export default function SyncPanel() {
                 }}
               />
             ) : (
-              <Off status={status} />
+              <Setup status={status} form={form} setForm={setForm} />
             )}
           </div>
         </div>
