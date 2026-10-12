@@ -15,7 +15,7 @@ import {
 import { load } from "./storage";
 import "./Planner.css";
 
-const STARTER = `# Today
+export const STARTER = `# Today
 
 [] Try clicking this checkbox
 [] Write down what you actually need to do

@@ -1,0 +1,219 @@
+/* The sync panel borrows the backup panel's frame and type (Backup.css); this
+   is only what's particular to it. Like `.backup`, the wrapper dissolves into
+   the masthead's flex row so the button sits with the others and the panel
+   takes a full-width row of its own. */
+.sync {
+  display: contents;
+}
+
+/* Sync's buttons come first in the masthead, so they take the push to the right
+   edge; the backup buttons follow straight after. */
+.sync-actions {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+/* On a phone the wordmark takes a row to itself, so the three buttons stay
+   together underneath instead of one riding up beside it. */
+@media (max-width: 560px) {
+  .sync-actions {
+    margin-left: 0;
+  }
+
+  .masthead .wordmark {
+    flex-basis: 100%;
+    text-align: center;
+  }
+}
+
+/* Panels go below every button, whichever was opened first. */
+.sync .backup-panel,
+.backup .backup-panel {
+  order: 1;
+}
+
+.sync-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border-radius: 50%;
+  vertical-align: 1px;
+  background: var(--text-faint);
+}
+
+.sync-dot-ok {
+  background: var(--green);
+  box-shadow: 0 0 8px rgba(78, 232, 124, 0.6);
+}
+
+.sync-dot-busy {
+  background: var(--cyan);
+  animation: sync-pulse 1s ease-in-out infinite alternate;
+}
+
+.sync-dot-warn {
+  background: var(--amber);
+}
+
+.sync-dot-bad {
+  background: var(--magenta);
+}
+
+@keyframes sync-pulse {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.sync-status {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.sync-ok {
+  color: var(--green);
+}
+
+.sync-warn {
+  color: var(--amber);
+}
+
+.sync-inline {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--cyan);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sync-heading {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.sync-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+}
+
+.sync-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  max-width: 460px;
+}
+
+.sync-join {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 460px;
+}
+
+.sync-field em {
+  font-style: normal;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
+.sync-join input,
+.sync-field input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.sync-code {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.35);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  color: var(--cyan);
+  overflow-wrap: anywhere;
+}
+
+.sync-code dt {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  align-self: center;
+}
+
+.sync-code dd {
+  margin: 0;
+  user-select: all;
+}
+
+.sync-conflicts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sync-conflicts ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sync-conflicts li {
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.sync-conflict-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 6px 8px 6px 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+.sync-conflict-text {
+  margin: 0;
+  padding: 10px 12px;
+  max-height: 160px;
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

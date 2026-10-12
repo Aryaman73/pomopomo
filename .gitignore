@@ -8,3 +8,9 @@ dist
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Wrangler's local dev state (sync-server)
+.wrangler
+
+# Local Worker secrets (sync-server)
+.dev.vars

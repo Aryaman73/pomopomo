@@ -16,6 +16,9 @@ import "./markdownEditor.css";
 // The editor fires on every keystroke and localStorage writes are synchronous.
 const SAVE_DELAY = 400;
 
+/** Dispatch on `window` to make every open editor write its text now. */
+export const FLUSH_EVENT = "pomopomo:flush";
+
 // Slack under the last line, so the line you're typing can sit somewhere
 // comfortable rather than pinned to the bottom edge. Panels are sized by hand
 // now, so this is a fixed amount rather than a slice of the viewport — a
@@ -105,11 +108,15 @@ export function useMarkdownEditor(options) {
     };
     window.addEventListener("beforeunload", flush);
     document.addEventListener("visibilitychange", flush);
+    // Sync asks for this before it reads, so it never sends a document that's
+    // a few keystrokes behind the one on screen.
+    window.addEventListener(FLUSH_EVENT, flush);
 
     return () => {
       flush();
       window.removeEventListener("beforeunload", flush);
       document.removeEventListener("visibilitychange", flush);
+      window.removeEventListener(FLUSH_EVENT, flush);
       editor.destroy();
       viewRef.current = null;
     };

@@ -2,6 +2,7 @@ import Backup from "./Backup";
 import Dailies from "./Dailies";
 import History from "./History";
 import Planner from "./Planner";
+import SyncPanel from "./SyncPanel";
 import Timer from "./Timer";
 import { useDailies } from "./useDailies";
 import { useTimer } from "./useTimer";
@@ -16,6 +17,7 @@ export default function App() {
       <div className="app">
         <header className="masthead">
           <h1 className="wordmark">pomopomo</h1>
+          <SyncPanel />
           <Backup />
         </header>
 

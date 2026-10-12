@@ -142,8 +142,8 @@ export default function Backup() {
         <div className="panel backup-panel">
           <div className="panel-body">
             <p className="backup-note">
-              Everything in pomopomo lives in this browser and is never sent
-              anywhere — which also means clearing your site data is the only
+              Unless you turn on sync, everything in pomopomo lives only in this
+              browser — which also means clearing your site data is the only
               copy gone. <strong>export</strong> writes it all to a file.
             </p>
 

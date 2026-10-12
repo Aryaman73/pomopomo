@@ -143,6 +143,25 @@ function cleanSettings(raw) {
 }
 
 /**
+ * Every section of a backup, checked and normalized; anything missing or
+ * malformed comes back null or empty. Sync runs what it receives from other
+ * devices through this too, so a bad blob is stopped at the same gate.
+ */
+export function cleanData(raw) {
+  return {
+    planner: typeof raw.planner === "string" ? raw.planner : null,
+    dailies: typeof raw.dailies === "string" ? raw.dailies : null,
+    dailiesDay: typeof raw.dailiesDay === "string" ? raw.dailiesDay : null,
+    dailiesHour: isFiniteNumber(raw.dailiesHour) ? clampHour(raw.dailiesHour) : null,
+    dailiesLog: cleanLog(raw.dailiesLog),
+    settings: cleanSettings(raw.settings),
+    sessions: cleanSessions(raw.sessions),
+    archive: cleanArchive(raw.archive),
+    done: cleanDone(raw.done),
+  };
+}
+
+/**
  * Validate a backup file's text. Returns `{ error }` or `{ data, summary }`.
  * Deliberately tolerant of missing sections and strict about the envelope: a
  * file that isn't ours shouldn't get as far as overwriting anything.
@@ -173,20 +192,7 @@ export function parseBackup(text) {
     return { error: "That backup has no data in it." };
   }
 
-  const data = {
-    planner: typeof raw.data.planner === "string" ? raw.data.planner : null,
-    dailies: typeof raw.data.dailies === "string" ? raw.data.dailies : null,
-    dailiesDay:
-      typeof raw.data.dailiesDay === "string" ? raw.data.dailiesDay : null,
-    dailiesHour: isFiniteNumber(raw.data.dailiesHour)
-      ? clampHour(raw.data.dailiesHour)
-      : null,
-    dailiesLog: cleanLog(raw.data.dailiesLog),
-    settings: cleanSettings(raw.data.settings),
-    sessions: cleanSessions(raw.data.sessions),
-    archive: cleanArchive(raw.data.archive),
-    done: cleanDone(raw.data.done),
-  };
+  const data = cleanData(raw.data);
 
   const empty =
     data.planner === null &&

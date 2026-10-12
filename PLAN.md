@@ -3,8 +3,9 @@
 A pomodoro timer + markdown planner, for me and for anyone else who wants it.
 Lives at **https://aryamans.me/pomopomo/**.
 
-Everything stays client-side. No accounts, no backend, no analytics. Your data
-is in your browser and nowhere else.
+Everything stays client-side. No accounts, no analytics, and no backend that
+can read anything: your data is in your browser, and if you turn on sync (v8),
+it travels end-to-end encrypted through a server that only stores ciphertext.
 
 ---
 
@@ -360,6 +361,70 @@ The editor's bottom padding used to be `40vh`, on the theory that the panel was
 tall. At a hand-set height that's mostly empty scroll, so it's a flat 140px now:
 still enough to lift the line you're typing off the bottom edge.
 
+## v8 — sync across devices
+
+- [x] Opt-in **sync** in the header: turn it on, copy a link (or a 25-character
+      code) to the other devices, done. No accounts.
+- [x] End-to-end encrypted. A random code derives, by HKDF, both the vault id
+      the server files data under and the AES-GCM key it's sealed with. The
+      server — a small Cloudflare Worker with a Durable Object per vault, in
+      `sync-server/` — stores ciphertext and a revision number, and nothing else.
+- [x] Three-way merge on the devices, against the last state both sides agreed
+      on. Documents merge by diff3 over lines; records merge as keyed sets, so a
+      deletion is a deletion rather than something the other device brings back.
+- [x] Clashes keep both: the most recent edit wins, the other is a **saved
+      copy** in the sync panel, synced everywhere until you dismiss it.
+- [x] An access key (the Worker's `ACCESS_KEY` secret) on every request. The
+      server's URL is in the public bundle, and without a gate every visitor who
+      turned on sync would be storing data on my Cloudflare account. The key
+      decides who can *use* the server; the sync code still decides who can
+      *read* a vault, and the server never sees that. Fails closed: no secret
+      set, no service.
+
+### Why this shape
+
+The app has no server and every component owns its state after seeding it from
+`localStorage` once. So the cheapest correct sync is one that works at that
+seam, not inside React: read storage, merge, write storage, reload — the same
+move import already makes. That gives three rules:
+
+1. **Pull before the first render.** `main.jsx` waits up to 2.5s for a sync,
+   so a device opened after another one starts on current data and the dailies
+   rollover runs against the merged day.
+2. **Merged data only ever goes into storage on the way into a reload.** Writing
+   under a live page would be undone by the next keystroke, and the stale copy
+   would then sync out as if it were an edit.
+3. **Never reload under someone typing.** A remote change that arrives
+   mid-edit leaves the page *behind* (amber dot) and applies after 15s idle, on
+   a tab switch, or on **update now**. Nothing's lost by waiting: the server
+   already has the merge, and the base still says what this device last agreed
+   to, so the next run folds the new keystrokes in too.
+
+Writes are compare-and-swap on the revision. A device that loses the race is
+handed the current copy in the refusal and merges against it.
+
+### The merge, field by field
+
+| Data | How |
+| --- | --- |
+| Planner, dailies list | diff3 over lines. Both sides inserting at the same spot keeps both; same-length regions merge line by line, so ticks on neighbouring tasks don't clash. A real clash: newest edit wins, other kept as a copy |
+| Dailies ticks across a day boundary | A side still on an older day is rolled over first — day logged, ticks cleared — exactly as its own rollover would have, then merged like for like |
+| Sessions, archive | Keyed sets (id + content). Deleted on one side and untouched on the other: gone |
+| Completion stamps | Keyed map; an observed stamp beats a guessed one, then the earlier |
+| Day log | Keyed by day; the side that saw more ticks wins |
+| Timer settings, rollover hour | Whichever side changed it; both changed, the newer |
+
+Joining is the one case with no base. The joining device takes the documents
+the others share (keeping a copy of its own unless it's the untouched starter
+text), and its sessions and archive are added to theirs.
+
+### Deliberately not built
+- Live, keystroke-level collaboration (CRDTs). One person on one device at a
+  time is the real use; diff3 against a base covers it with no runtime deps.
+- Syncing a running timer. It belongs to the device it's running on.
+- A QR code for the link — it would be the first dependency for sync. The link
+  can be sent to yourself, and the code is typeable.
+
 ## Backlog — everything else discussed, nothing dropped
 
 ### Archive follow-ups
@@ -398,7 +463,10 @@ still enough to lift the line you're typing off the bottom edge.
 
 | Risk | Handling |
 | --- | --- |
-| `localStorage` is the only copy of the user's data | Addressed in v4: **export** writes everything to a file, and the import panel says plainly that this browser holds the only copy. Backups are still manual — nothing prompts you to take one |
+| `localStorage` is the only copy of the user's data | Addressed in v4: **export** writes everything to a file, and the import panel says plainly that this browser holds the only copy. With sync on (v8), every synced device and the server hold a copy too |
+| Sync merges the wrong way and loses an edit | Three-way merge against the last agreed base, never last-write-wins. Where two edits really clash, the losing document is kept as a saved copy rather than dropped |
+| A reload from sync eats keystrokes | Remote changes only land on the way into a reload, and never while you're typing — they wait for 15s of quiet, a tab switch, or **update now** |
+| Losing the sync code | It's the only key. Any synced device can show it again; with every device gone, the server copy is unreadable by design. Export still works as a backup |
 | Session log growing without bound | Capped at 2000 records (~years of heavy use), oldest dropped first |
 | Archive growing without bound | Capped at 5000 entries, oldest dropped first |
 | Two identically worded tasks under one heading share a completion stamp | Accepted; the alternative (keying on line number) breaks on any edit above the task |
