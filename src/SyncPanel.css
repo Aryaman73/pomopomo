@@ -11,7 +11,14 @@
 .sync-actions {
   display: flex;
   align-items: center;
+  gap: 2px;
   margin-left: auto;
+}
+
+/* The status-and-sync-now button. Its label changes with the state, so give it
+   a floor rather than letting the whole header shuffle each time. */
+.sync-button {
+  min-width: 92px;
 }
 
 /* On a phone the wordmark takes a row to itself, so the three buttons stay
@@ -70,20 +77,6 @@
   }
 }
 
-.sync-status {
-  margin: 0;
-  font-size: 13px;
-  color: var(--text-dim);
-}
-
-.sync-ok {
-  color: var(--green);
-}
-
-.sync-warn {
-  color: var(--amber);
-}
-
 .sync-inline {
   border: 0;
   padding: 0;
@@ -102,11 +95,11 @@
   color: var(--text-dim);
 }
 
-.sync-choice {
+.sync-form {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: 12px;
   margin: 0;
 }
 
@@ -114,26 +107,27 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
+  max-width: 420px;
   font-size: 12.5px;
   color: var(--text-dim);
-  max-width: 460px;
 }
 
-.sync-join {
+.sync-buttons {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  width: 100%;
-  max-width: 460px;
 }
 
-.sync-field em {
-  font-style: normal;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--text-faint);
+.sync-off {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
 }
 
-.sync-join input,
 .sync-field input {
   flex: 1;
   min-width: 0;
@@ -143,6 +137,8 @@
 
 .sync-code {
   display: grid;
+  width: 100%;
+  max-width: 420px;
   grid-template-columns: auto 1fr;
   gap: 4px 12px;
   margin: 0;
@@ -168,6 +164,9 @@
 
 .sync-code dd {
   margin: 0;
+}
+
+.sync-code-value {
   user-select: all;
 }
 
