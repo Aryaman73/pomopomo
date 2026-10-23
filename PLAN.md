@@ -3,8 +3,9 @@
 A pomodoro timer + markdown planner, for me and for anyone else who wants it.
 Lives at **https://aryamans.me/pomopomo/**.
 
-Everything stays client-side. No accounts, no analytics, and no backend that
-can read anything: your data is in your browser, and if you turn on sync (v8),
+Everything stays client-side. No accounts, no backend that can read anything
+(the only analytics is a cookieless GoatCounter page-view count, shared with the
+rest of aryamans.me): your data is in your browser, and if you turn on sync (v8),
 it travels end-to-end encrypted through a server that only stores ciphertext.
 
 ---
